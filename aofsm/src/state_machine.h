@@ -9,6 +9,25 @@ namespace aofsm {
 
 using std::size_t;
 
+// Die Klasse stellt eine State-Machine für einen Client.
+// Der Client muss die State-Machine mit folgenden Parametern parametrieren:
+// - Anzahl der Zustände
+// - Anzahl der Events
+// - Transitionen
+//
+// Template-Parameter:
+//  - Client_t - Klasse der Clients
+//
+// Anforderungen an Client:
+//
+//  - Client muss folgende nested Typen haben:
+//    -  enum State { kInitState, .... , kStateCount};
+//    -  enum Event { .... , kEventCount };
+//
+//  - Client muss folgende Methoden implementieren:
+//    - DoUnknownEvent();
+//    - DoUnknownTransition();
+//
 template <typename Client_t>
 class StateMachine {
  public:
@@ -22,8 +41,8 @@ class StateMachine {
   };
 
   struct Configuration {
-    size_t transitions_count;
-    Transition* transitions_array;
+    const size_t transitions_count;
+    const Transition* transitions_array;
   };
 
   StateMachine(Client_t* client, const Configuration& configuration);

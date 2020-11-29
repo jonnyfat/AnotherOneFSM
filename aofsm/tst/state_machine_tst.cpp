@@ -58,7 +58,7 @@ using Event_t = SimlpeClient::Event;
 
 using Transition_t = ClientStateMachine_t::Transition;
 
-Transition_t transitions[] =
+const Transition_t transitions[] =
     // {Source-State        Event                Action
     //  Destination-State}
     {{State_t::kInitState, Event_t::kStartAEvt, &SimlpeClient::DoStartA,
