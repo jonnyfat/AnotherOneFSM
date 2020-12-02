@@ -31,18 +31,42 @@ using std::size_t;
 template <typename Client_t>
 class StateMachine {
  public:
+  enum : size_t { MAX_ACTIONS_PER_TRANSITION = 3 };
+
   using Action_t = void (Client_t::*)(void);
+  using State_t = typename Client_t::State;
+  using Event_t = typename Client_t::Event;
+
+  struct ArrayOfActions {
+    template <class... Actions>
+    ArrayOfActions(Actions... actions)
+        : action_count{sizeof...(actions)}, action_array{actions...} {}
+
+    size_t action_count;
+    Action_t action_array[MAX_ACTIONS_PER_TRANSITION];
+  };
 
   struct Transition {
-    typename Client_t::State src_state;
-    typename Client_t::Event event;
-    Action_t action;
-    typename Client_t::State dst_state;
+    State_t src_state;
+    Event_t event;
+    State_t dst_state;
+    ArrayOfActions actions;
+  };
+
+  struct DefaultAction {
+    Event_t event;
+    ArrayOfActions actions;
+  };
+
+  struct DefaultTransition {
+    Event_t event;
+    State_t dst_state;
+    ArrayOfActions actions;
   };
 
   struct Configuration {
-    const size_t transitions_count;
-    const Transition* transitions_array;
+    const Transition* transitions;
+    size_t transitions_count;
   };
 
   StateMachine(Client_t* client, const Configuration& configuration);

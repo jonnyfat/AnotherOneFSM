@@ -47,6 +47,7 @@ class SimlpeClient {
   void DoStartA() {}
   void DoStartB() {}
   void DoEndA() {}
+  void DoPreEndB() {}
   void DoEndB() {}
 };
 
@@ -56,24 +57,28 @@ using State_t = SimlpeClient::State;
 
 using Event_t = SimlpeClient::Event;
 
-using Transition_t = ClientStateMachine_t::Transition;
+using Transition_t = aofsm::StateMachine<SimlpeClient>::Transition;
 
-const Transition_t transitions[] =
-    // {Source-State        Event                Action
-    //  Destination-State}
-    {{State_t::kInitState, Event_t::kStartAEvt, &SimlpeClient::DoStartA,
-      State_t::kAState},
-     {State_t::kInitState, Event_t::kStartBEvt, &SimlpeClient::DoStartB,
-      State_t::kBState},
-     {State_t::kAState, Event_t::kEndEvt, &SimlpeClient::DoEndA,
-      State_t::kFinalState},
-     {State_t::kBState, Event_t::kEndEvt, &SimlpeClient::DoEndB,
-      State_t::kFinalState}};
+const Transition_t transitions[]
+    // {Source-State        Event                Destination-State
+    //  Actions}
+    {{State_t::kInitState, Event_t::kStartAEvt, State_t::kAState,
+      &SimlpeClient::DoStartA},
+     {State_t::kInitState, Event_t::kStartBEvt, State_t::kBState,
+      &SimlpeClient::DoStartB},
+     {State_t::kAState, Event_t::kEndEvt, State_t::kFinalState,
+      &SimlpeClient::DoEndA},
+     {State_t::kBState,
+      Event_t::kEndEvt,
+      State_t::kFinalState,
+      {
+          &SimlpeClient::DoPreEndB,
+          &SimlpeClient::DoEndB,
+      }}};
 
-using ClientStateMachineConfig_t = ClientStateMachine_t::Configuration;
+using Configuration_t = aofsm::StateMachine<SimlpeClient>::Configuration;
 
-ClientStateMachineConfig_t configuration{sizeof_array(transitions),
-                                         transitions};
+Configuration_t configuration{transitions, sizeof_array(transitions)};
 
 TEST(aofsm, instantiate) {
   SimlpeClient simple_client;
