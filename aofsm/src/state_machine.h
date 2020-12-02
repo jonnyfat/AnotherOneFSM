@@ -14,6 +14,8 @@ using std::size_t;
 // - Anzahl der Zustände
 // - Anzahl der Events
 // - Transitionen
+// - Default-Transitionen (optional)
+// - Default-Actions (optional)
 //
 // Template-Parameter:
 //  - Client_t - Klasse der Clients
@@ -24,9 +26,6 @@ using std::size_t;
 //    -  enum State { kInitState, .... , kStateCount};
 //    -  enum Event { .... , kEventCount };
 //
-//  - Client muss folgende Methoden implementieren:
-//    - DoUnknownEvent();
-//    - DoUnknownTransition();
 //
 template <typename Client_t>
 class StateMachine {
@@ -53,34 +52,84 @@ class StateMachine {
     ArrayOfActions actions;
   };
 
-  struct DefaultAction {
-    Event_t event;
-    ArrayOfActions actions;
-  };
-
   struct DefaultTransition {
     Event_t event;
     State_t dst_state;
     ArrayOfActions actions;
   };
 
-  struct Configuration {
-    const Transition* transitions;
-    size_t transitions_count;
+  struct DefaultAction {
+    Event_t event;
+    ArrayOfActions actions;
   };
 
-  StateMachine(Client_t* client, const Configuration& configuration);
+  template <size_t N>
+  using TransitionArray = Transition[N];
+
+  template <size_t N>
+  using DefaultTransitionArray = DefaultTransition[N];
+
+  template <size_t N>
+  using DefaultActionArray = DefaultAction[N];
+
+  template <size_t TRANSITION_COUNT>
+  StateMachine(Client_t* client,
+               const TransitionArray<TRANSITION_COUNT>& transitions);
+
+  template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT>
+  StateMachine(Client_t* client,
+               const TransitionArray<TRANSITION_COUNT>& transitions,
+               const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
+                   default_transitions);
+
+  template <size_t TRANSITION_COUNT, size_t DEFAULT_ACTION_COUNT>
+  StateMachine(Client_t* client,
+               const TransitionArray<TRANSITION_COUNT>& transitions,
+               const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions);
+
+  template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT,
+            size_t DEFAULT_ACTION_COUNT>
+  StateMachine(Client_t* client,
+               const TransitionArray<TRANSITION_COUNT>& transitions,
+               const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
+                   default_transitions,
+               const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions);
+
   virtual ~StateMachine() = default;
 
  private:
   Client_t* client_{nullptr};
 };
 
-}  // namespace aofsm
+template <typename Client_t>
+template <size_t TRANSITION_COUNT>
+StateMachine<Client_t>::StateMachine(
+    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions)
+    : client_{client} {}
 
 template <typename Client_t>
-inline aofsm::StateMachine<Client_t>::StateMachine(
-    Client_t* client, const Configuration& configuration)
+template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT>
+StateMachine<Client_t>::StateMachine(
+    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
+    const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>& default_transitions)
     : client_{client} {}
+
+template <typename Client_t>
+template <size_t TRANSITION_COUNT, size_t DEFAULT_ACTION_COUNT>
+StateMachine<Client_t>::StateMachine(
+    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
+    const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
+    : client_{client} {}
+
+template <typename Client_t>
+template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT,
+          size_t DEFAULT_ACTION_COUNT>
+StateMachine<Client_t>::StateMachine(
+    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
+    const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>& default_transitions,
+    const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
+    : client_{client} {}
+
+}  // namespace aofsm
 
 #endif  // AOFSM_SRC_STATE_MACHINE_H_
