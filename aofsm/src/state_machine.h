@@ -41,7 +41,7 @@ class StateMachine {
     ArrayOfActions(Actions... actions)
         : action_count{sizeof...(actions)}, action_array{actions...} {}
 
-    size_t action_count;
+    size_t action_count{0};
     Action_t action_array[MAX_ACTIONS_PER_TRANSITION];
   };
 
@@ -97,8 +97,22 @@ class StateMachine {
 
   virtual ~StateMachine() = default;
 
+  void Trigger(Event_t event);
+
  private:
+  struct EventTransition {
+    State_t dst_state;
+    ArrayOfActions actions;
+  };
+  struct StateTransitions {
+    EventTransition event_transitions[Event_t::kEventCount];
+  };
+
   Client_t* client_{nullptr};
+
+  State_t current_state_{State_t::kInitState};
+
+  StateTransitions state_transitions_[State_t::kStateCount];
 };
 
 template <typename Client_t>
@@ -129,6 +143,20 @@ StateMachine<Client_t>::StateMachine(
     const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>& default_transitions,
     const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
     : client_{client} {}
+
+template <typename Client_t>
+void StateMachine<Client_t>::Trigger(Event_t event) {
+  if (current_state_ < State_t::kStateCount && event < Event_t::kEventCount) {
+    const EventTransition& current_transition =
+        state_transitions_[current_state_].event_transitions[event];
+
+    current_state_ = current_transition.dst_state;
+    for (size_t i = 0; i < current_transition.actions.action_count; ++i) {
+      Action_t action = current_transition.actions.action_array[i];
+      (client_->*action)();
+    }
+  }
+}
 
 }  // namespace aofsm
 

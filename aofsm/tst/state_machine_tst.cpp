@@ -59,7 +59,7 @@ using Event_t = SimlpeClient::Event;
 
 using Transition_t = aofsm::StateMachine<SimlpeClient>::Transition;
 
-TEST(aofsm, instantiate) {
+TEST(aofsm_StateMachine, instantiate) {
   SimlpeClient simple_client;
 
   const Transition_t transitions[]
@@ -117,6 +117,11 @@ TEST(aofsm, instantiate) {
 
 class SimlpeClient2 {
  public:
+  SimlpeClient2();
+
+  void StartA() { state_machine.Trigger(kStartAEvt); }
+
+ private:
   void DoStartA() {}
   void DoStartB() {}
   void DoEndA() {}
@@ -127,9 +132,6 @@ class SimlpeClient2 {
   void DefaultTransition1() {}
   void DefaultTransition2() {}
 
-  SimlpeClient2();
-
- private:
   enum State { kInitState, kAState, kBState, kFinalState, kStateCount };
   enum Event { kStartAEvt, kStartBEvt, kEndEvt, kDefaultEvent, kEventCount };
 
@@ -187,3 +189,8 @@ const SimlpeClient2::DefaultAction_t SimlpeClient2::default_actions[]
 
 SimlpeClient2::SimlpeClient2()
     : state_machine(this, transitions, default_transitions, default_actions) {}
+
+TEST(aofsm_StateMachine, trigger) {
+  SimlpeClient2 simple_client;
+  simple_client.StartA();
+}
