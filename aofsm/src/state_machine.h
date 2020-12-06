@@ -85,6 +85,9 @@ class StateMachine {
   // State-Machine-Events aufgerufen werden.
   using Action_t = void (Client_t::*)(ActionParameterTypes...);
 
+  // Pointer auf Member-Methode des Clients, welche beim Ausführen von
+  // Transition als Guard dient: es soll ein bool zurückgeben. Bei true wird 1.
+  // Transition ausgeführt, bei false 2.
   using Guard_t = bool (Client_t::*)(ActionParameterTypes...);
 
   // Array von Pointern auf Client-Member-Methoden.
@@ -97,22 +100,26 @@ class StateMachine {
     Action_t action_array[MAX_ACTIONS_PER_TRANSITION];
   };
 
-  // Parametrierung eines Übergangs für ein Zustand:
-  // im Zustand src_state beim Event event soll
-  // Übergang nach Zustand dst_state stattfinden und dabei die die
-  // Client-Methoden aus ArrayOfActions actions aufgerufen werden.
   struct StateTransitionDef {
-    State_t src_state;
-    Event_t event;
-    State_t dst_state;
-    ArrayOfActions actions;
-  };
+   private:
+    State_t src_state_;
+    Event_t event_;
+    Guard_t guard_action_;
+    State_t trans1_dst_state_;
+    ArrayOfActions trans1_actions_;
+    State_t trans2_dst_state_;
+    ArrayOfActions trans2_actions_;
 
-  struct GuardedStateTransitionDef {
-    State_t src_state;
-    Event_t event;
-    State_t dst_state;
-    ArrayOfActions actions;
+   public:
+    StateTransitionDef(State_t src_state, Event_t event, State_t dst_state,
+                       const ArrayOfActions& actions)
+        : src_state_{src_state},
+          event_{event},
+          guard_action_{nullptr},
+          trans1_dst_state_{dst_state},
+          trans1_actions_{actions},
+          trans2_dst_state_{State_t::kStateCount},
+          trans2_actions_{} {}
   };
 
   // Parametrierung eines Default-Übergangs für die State-Machine.
@@ -169,8 +176,11 @@ class StateMachine {
 
  private:
   struct EventTransition {
-    State_t dst_state;
-    ArrayOfActions actions;
+    Guard_t guard_action;
+    State_t trans1_dst_state;
+    ArrayOfActions trans1_actions;
+    State_t trans2_dst_state;
+    ArrayOfActions trans2_actions;
   };
   struct StateTransitions {
     EventTransition event_transitions[Event_t::kEventCount];
@@ -233,12 +243,26 @@ void StateMachine<
     ActionParameterTypes...>::Trigger(Event_t event,
                                       ActionParameterTypes... params) {
   if (current_state_ < State_t::kStateCount && event < Event_t::kEventCount) {
+    // Transaction in aktuellem Zustand für den aktuellen Event.
     const EventTransition& current_transition =
         state_transitions_[current_state_].event_transitions[event];
 
-    current_state_ = current_transition.dst_state;
-    for (size_t i = 0; i < current_transition.actions.action_count; ++i) {
-      Action_t action = current_transition.actions.action_array[i];
+    // Die Actions, welche beim Zustandsübergang ausgeführt werden müssen sind
+    // von Guard abhängig
+    const ArrayOfActions* trans_actions = nullptr;
+
+    Guard_t guard_action = current_transition.guard_action;
+
+    if ((guard_action == nullptr) || ((client_->*guard_action)(params...))) {
+      current_state_ = current_transition.trans1_dst_state;
+      trans_actions = &current_transition.trans1_actions;
+    } else {
+      current_state_ = current_transition.trans2_dst_state;
+      trans_actions = &current_transition.trans2_actions;
+    }
+
+    for (size_t i = 0; i < trans_actions->action_count; ++i) {
+      Action_t action = trans_actions->action_array[i];
       (client_->*action)(params...);
     }
   }
