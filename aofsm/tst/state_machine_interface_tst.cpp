@@ -57,12 +57,13 @@ using State_t = SimlpeClient::State;
 
 using Event_t = SimlpeClient::Event;
 
-using Transition_t = aofsm::StateMachine<SimlpeClient>::Transition;
+using StateTransitionDef_t =
+    aofsm::StateMachine<SimlpeClient>::StateTransitionDef;
 
 TEST(aofsm_StateMachine, instantiate) {
   SimlpeClient simple_client;
 
-  const Transition_t transitions[]
+  const StateTransitionDef_t transitions[]
       // {Source-State        Event                Destination-State
       //  Actions}
       {{State_t::kInitState, Event_t::kStartAEvt, State_t::kAState,
@@ -79,10 +80,10 @@ TEST(aofsm_StateMachine, instantiate) {
             &SimlpeClient::DoEndB,
         }}};
 
-  using DefaultTransition_t =
-      aofsm::StateMachine<SimlpeClient>::DefaultTransition;
+  using StateMachineDefaultTransitionDef_t =
+      aofsm::StateMachine<SimlpeClient>::StateMachineDefaultTransitionDef;
 
-  const DefaultTransition_t default_transitions[]
+  const StateMachineDefaultTransitionDef_t default_transitions[]
       // {Source-State        Event                Destination-State
       //  Actions}
       {{Event_t::kDefaultEvent,
@@ -113,84 +114,4 @@ TEST(aofsm_StateMachine, instantiate) {
 
   ClientStateMachine_t state_machine4(&simple_client, transitions,
                                       default_transitions, default_actions);
-}
-
-class SimlpeClient2 {
- public:
-  SimlpeClient2();
-
-  void StartA() { state_machine.Trigger(kStartAEvt); }
-
- private:
-  void DoStartA() {}
-  void DoStartB() {}
-  void DoEndA() {}
-  void DoPreEndB() {}
-  void DoEndB() {}
-  void DefaultAction1() {}
-  void DefaultAction2() {}
-  void DefaultTransition1() {}
-  void DefaultTransition2() {}
-
-  enum State { kInitState, kAState, kBState, kFinalState, kStateCount };
-  enum Event { kStartAEvt, kStartBEvt, kEndEvt, kDefaultEvent, kEventCount };
-
-  friend class aofsm::StateMachine<SimlpeClient2>;
-
-  using StateMachine = aofsm::StateMachine<SimlpeClient2>;
-
-  using Transition_t = StateMachine::Transition;
-
-  using DefaultTransition_t = StateMachine::DefaultTransition;
-
-  using DefaultAction_t = StateMachine::DefaultAction;
-
-  static const Transition_t transitions[];
-
-  static const DefaultTransition_t default_transitions[];
-
-  static const DefaultAction_t default_actions[];
-
-  StateMachine state_machine;
-};
-
-const SimlpeClient2::Transition_t SimlpeClient2::transitions[]
-    // {Source-State        Event                Destination-State
-    //  Actions}
-    {{kInitState, kStartAEvt, kAState, &SimlpeClient2::DoStartA},
-     {kInitState, kStartBEvt, kBState, &SimlpeClient2::DoStartB},
-     {kAState, kEndEvt, kFinalState, &SimlpeClient2::DoEndA},
-     {kBState,
-      kEndEvt,
-      kFinalState,
-      {
-          &SimlpeClient2::DoPreEndB,
-          &SimlpeClient2::DoEndB,
-      }}};
-
-const SimlpeClient2::DefaultTransition_t SimlpeClient2::default_transitions[]
-    // {Source-State        Event                Destination-State
-    //  Actions}
-    {{kDefaultEvent,
-      kFinalState,
-      {
-          &SimlpeClient2::DefaultTransition1,
-          &SimlpeClient2::DefaultTransition2,
-      }}};
-
-const SimlpeClient2::DefaultAction_t SimlpeClient2::default_actions[]
-    // {Source-State        Event                Destination-State
-    //  Actions}
-    {{kDefaultEvent,
-      {
-          &SimlpeClient2::DefaultAction1,
-          &SimlpeClient2::DefaultAction2,
-      }}};
-
-SimlpeClient2::SimlpeClient2()
-    : state_machine(this, transitions, default_transitions, default_actions) {}
-
-TEST(aofsm_StateMachine, trigger) {
-  SimlpeClient2 simple_client;
-  simple_client.StartA();
 }
