@@ -77,12 +77,15 @@ using std::size_t;
 //
 template <typename Client_t, typename State_t = typename Client_t::State,
           typename Event_t = typename Client_t::Event,
-          size_t MAX_ACTIONS_PER_TRANSITION = 2>
+          size_t MAX_ACTIONS_PER_TRANSITION = 2,
+          typename... ActionParameterTypes>
 class StateMachine {
  public:
   // Pointer auf Member-Methode des Clients, welche beim Triggern von
   // State-Machine-Events aufgerufen werden.
-  using Action_t = void (Client_t::*)(void);
+  using Action_t = void (Client_t::*)(ActionParameterTypes...);
+
+  using Guard_t = bool (Client_t::*)(ActionParameterTypes...);
 
   // Array von Pointern auf Client-Member-Methoden.
   struct ArrayOfActions {
@@ -99,6 +102,13 @@ class StateMachine {
   // Übergang nach Zustand dst_state stattfinden und dabei die die
   // Client-Methoden aus ArrayOfActions actions aufgerufen werden.
   struct StateTransitionDef {
+    State_t src_state;
+    Event_t event;
+    State_t dst_state;
+    ArrayOfActions actions;
+  };
+
+  struct GuardedStateTransitionDef {
     State_t src_state;
     Event_t event;
     State_t dst_state;
@@ -153,7 +163,7 @@ class StateMachine {
 
   virtual ~StateMachine() = default;
 
-  void Trigger(Event_t event);
+  void Trigger(Event_t event, ActionParameterTypes... params);
 
   void SetCurrentState(State_t state);
 
@@ -174,17 +184,19 @@ class StateMachine {
 };
 
 template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION>
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 template <size_t TRANSITION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+             ActionParameterTypes...>::
     StateMachine(Client_t* client,
                  const TransitionArray<TRANSITION_COUNT>& transitions)
     : client_{client} {}
 
 template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION>
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+             ActionParameterTypes...>::
     StateMachine(Client_t* client,
                  const TransitionArray<TRANSITION_COUNT>& transitions,
                  const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
@@ -192,19 +204,21 @@ StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
     : client_{client} {}
 
 template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION>
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 template <size_t TRANSITION_COUNT, size_t DEFAULT_ACTION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+             ActionParameterTypes...>::
     StateMachine(
         Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
         const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
     : client_{client} {}
 
 template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION>
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT,
           size_t DEFAULT_ACTION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+             ActionParameterTypes...>::
     StateMachine(
         Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
         const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
@@ -213,9 +227,11 @@ StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
     : client_{client} {}
 
 template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION>
-void StateMachine<Client_t, State_t, Event_t,
-                  MAX_ACTIONS_PER_TRANSITION>::Trigger(Event_t event) {
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+void StateMachine<
+    Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+    ActionParameterTypes...>::Trigger(Event_t event,
+                                      ActionParameterTypes... params) {
   if (current_state_ < State_t::kStateCount && event < Event_t::kEventCount) {
     const EventTransition& current_transition =
         state_transitions_[current_state_].event_transitions[event];
@@ -223,7 +239,7 @@ void StateMachine<Client_t, State_t, Event_t,
     current_state_ = current_transition.dst_state;
     for (size_t i = 0; i < current_transition.actions.action_count; ++i) {
       Action_t action = current_transition.actions.action_array[i];
-      (client_->*action)();
+      (client_->*action)(params...);
     }
   }
 }
