@@ -9,62 +9,80 @@ namespace aofsm {
 
 using std::size_t;
 
-// Die Klasse implementiert eine State-Machine für eine Client-Classe.
+// Die Klasse implementiert eine State-Machine.
 //
-// Es erlaubt der Client-Classe die Methoden der Klasse in Abhängikeit vom einem
-// Zustand aufzurufen.
+// Ein Client-Class kann es benutzen, um die eigenen Methoden
+// Zustands- und Erreignis-abhängig aufzurufen.
 //
-// Z.B. nehmen wir an die Client-Classe kann zwei Zustände haben
-//  - StateA und StateB.
+// Dafür muss der Client-Class die Klasse StateMachine als Member instanziieren.
 //
-// In einer Situation muss im Zustand StateA die Client-Methode DoA und
-// in StateB die Client-Methode StateB aufgerufen werden.
+// Die Events und Zustände muss das Client-Class als Enums definieren.
 //
-// In diesem Fall kann der Client die StateMachine auf folgende Weise benutzen:
-// - Client muss als nested Dekalration
-//      - ein enum State haben:
-//         enum State { kStateA, kStateB, kStateCount, kInitState = kStateA};
-//      - ein enum Event haben:
-//         enum Event { kEventAction , kEventCount };
-//  - Client muss eine Instanz von StateMachine state_machint instanziieren und
-//       mit folgenden Transitionen parametrieren.
+// Die Transitionen von State-Machine als Array an Konstruktor von StateMachine
+// übergeben.
+//
+// Beispiel:
+//  - Das Client Class hat zwei Zustände: StateA , StateB und ein Ereignis
+//    EventAction.
+//  - Beim Ereignis EventAction muss
+//    -  in StateA muss Methode DoA des Clients
+//    -  in StateB muss Methode DoB des Clients
+//
+//  Das Client-Class muss die StateMachine auf folgende Weise benutzen:
+//
+//  - States und Events als nested Enum deklarieren
+//      -  enum State { kStateA, kStateB, kStateCount, kInitState = kStateA};
+//      -  enum Event { kEventAction , kEventCount };
+//
+//  - Transitionen werden als einen Array zusammengestellt.
 //
 //     {{kStateA, kEventAction, kStateA, &Client::DoA},
 //      {kStateB, kEventAction, kStateB, &Client::DoB}}
 //
-//  - Den Zustand mit SetCurrentState() setzen.
+//  - StateMachine wird als Member instantieert
 //
-//  - Wenn der Cleint Trigger(kEventAction) wird zustandabhängig DoA oder DoB
-//       aufgerufen.
+//      An Konstruktor wird this-Pointer und Array mit Transitionen übergeben
 //
+//  - Der aktuelle Zustand kann SetCurrentState() gesetzt werden.
 //
-// Der Client muss die State-Machine mit folgenden Parametern parametrieren:
-// - Anzahl der Zustände
-// - Anzahl der Events
-// - Transitionen
-// - Default-Transitionen (optional)
-// - Default-Actions (optional)
+//  - Wenn das Client-Class die Methode Trigger(kEventAction) von
+//    StateMachine-Istanz aufruft, wird zustandabhängig DoA oder DoB aufgerufen.
+//
+// Allgemeine Beschreibung der Schnittstellle:
+//
+//  Die State-Machine muss mit folgenden Parametern parametriert werden:
+//  - Anzahl der Zustände
+//  - Anzahl der Events
+//  - Initialzustand
+//  - Transitionen
+//  - Default-Transitionen (optional)
+//  - Default-Actions (optional)
+//  - Zustand-Schachtelung (optional)
 //
 // Template-Parameter:
-//  - Client_t - Klasse der Clients
+//  - Client_t - Client-Class
+//  - State_t - Clients Enumeration für Zustände;
+//  - Event_T - Clients Enumeration für Events
 //
-// Anforderungen an Client:
+// Anforderungen Template-Parameter:
 //
-//  - Client muss folgende nested Typen haben:
-//    -  enum State { kInitState, .... , kStateCount};
+//  - Enum State_t muss Elemente kInitState und kStateCount haben:
+//    -  enum State { .... , kStateCount, kInitState = ...};
+//     -- kStateCount Anzahl der Zustände
+//     -- kInitState - Initiale Zustand
+//  - Enum Event_t muss Element kEventCount haben
 //    -  enum Event { .... , kEventCount };
+//     --  kEventCount - Anzahl der Events
 //
 //
-template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION = 2>
+template <typename Client_t, typename State_t = typename Client_t::State,
+          typename Event_t = typename Client_t::Event,
+          size_t MAX_ACTIONS_PER_TRANSITION = 2>
 class StateMachine {
  public:
   // Pointer auf Member-Methode des Clients, welche beim Triggern von
   // State-Machine-Events aufgerufen werden.
   using Action_t = void (Client_t::*)(void);
-  // Clients Enumeration für Zustände
-  using State_t = typename Client_t::State;
-  // Clients Enumeration für Events
-  using Event_t = typename Client_t::Event;
 
   // Array von Pointern auf Client-Member-Methoden.
   struct ArrayOfActions {
@@ -87,7 +105,9 @@ class StateMachine {
     ArrayOfActions actions;
   };
 
-  // Parametrierung eines default Übergangs für die State-Machinte:
+  // Parametrierung eines Default-Übergangs für die State-Machine.
+  // Es gilt für alle Zustädnde der Machine für welche keine Transition mit dem
+  // Event definiert ist definiert ist.
   struct StateMachineDefaultTransitionDef {
     Event_t event;
     State_t dst_state;
@@ -153,38 +173,49 @@ class StateMachine {
   StateTransitions state_transitions_[State_t::kStateCount];
 };
 
-template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION>
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION>
 template <size_t TRANSITION_COUNT>
-StateMachine<Client_t, MAX_ACTIONS_PER_TRANSITION>::StateMachine(
-    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions)
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+    StateMachine(Client_t* client,
+                 const TransitionArray<TRANSITION_COUNT>& transitions)
     : client_{client} {}
 
-template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION>
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION>
 template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT>
-StateMachine<Client_t, MAX_ACTIONS_PER_TRANSITION>::StateMachine(
-    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
-    const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>& default_transitions)
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+    StateMachine(Client_t* client,
+                 const TransitionArray<TRANSITION_COUNT>& transitions,
+                 const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
+                     default_transitions)
     : client_{client} {}
 
-template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION>
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION>
 template <size_t TRANSITION_COUNT, size_t DEFAULT_ACTION_COUNT>
-StateMachine<Client_t, MAX_ACTIONS_PER_TRANSITION>::StateMachine(
-    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
-    const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+    StateMachine(
+        Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
+        const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
     : client_{client} {}
 
-template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION>
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION>
 template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT,
           size_t DEFAULT_ACTION_COUNT>
-StateMachine<Client_t, MAX_ACTIONS_PER_TRANSITION>::StateMachine(
-    Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
-    const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>& default_transitions,
-    const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
+StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION>::
+    StateMachine(
+        Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
+        const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
+            default_transitions,
+        const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
     : client_{client} {}
 
-template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION>
-void StateMachine<Client_t, MAX_ACTIONS_PER_TRANSITION>::Trigger(
-    Event_t event) {
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION>
+void StateMachine<Client_t, State_t, Event_t,
+                  MAX_ACTIONS_PER_TRANSITION>::Trigger(Event_t event) {
   if (current_state_ < State_t::kStateCount && event < Event_t::kEventCount) {
     const EventTransition& current_transition =
         state_transitions_[current_state_].event_transitions[event];
