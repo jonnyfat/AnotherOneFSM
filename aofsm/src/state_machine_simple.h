@@ -6,7 +6,7 @@
 
 namespace aofsm {
 
-template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION = 2,
+template <typename Client_t, size_t MAX_ACTIONS_PER_TRANSITION,
           typename... ActionParameterTypes>
 using StateMachineSimple =
     StateMachine<Client_t, typename Client_t::State, typename Client_t::Event,
