@@ -60,7 +60,7 @@ class SimlpeClient2 {
 
   using StateMachine = aofsm::StateMachine<SimlpeClient2>;
 
-  using Transition_t = StateMachine::StateTransitionDef;
+  using Transition_t = StateMachine::Transition;
 
   using DefaultTransition_t = StateMachine::StateMachineDefaultTransitionDef;
 
@@ -108,8 +108,7 @@ const SimlpeClient2::DefaultAction_t SimlpeClient2::default_actions[]
           &SimlpeClient2::DefaultAction2,
       }}};
 
-SimlpeClient2::SimlpeClient2()
-    : state_machine(this, transitions, default_transitions, default_actions) {}
+SimlpeClient2::SimlpeClient2() : state_machine(this, transitions) {}
 
 TEST(aofsm_StateMachine, trigger) {
   SimlpeClient2 simple_client;

@@ -57,13 +57,12 @@ using State_t = SimlpeClient::State;
 
 using Event_t = SimlpeClient::Event;
 
-using StateTransitionDef_t =
-    aofsm::StateMachine<SimlpeClient>::StateTransitionDef;
+using Transition_t = aofsm::StateMachine<SimlpeClient>::Transition;
 
 TEST(aofsm_StateMachine, instantiate) {
   SimlpeClient simple_client;
 
-  const StateTransitionDef_t transitions[]
+  const Transition_t transitions[]
       // {Source-State        Event                Destination-State
       //  Actions}
       {{State_t::kInitState, Event_t::kStartAEvt, State_t::kAState,
@@ -105,13 +104,4 @@ TEST(aofsm_StateMachine, instantiate) {
         }}};
 
   ClientStateMachine_t state_machine1(&simple_client, transitions);
-
-  ClientStateMachine_t state_machine2(&simple_client, transitions,
-                                      default_transitions);
-
-  ClientStateMachine_t state_machine3(&simple_client, transitions,
-                                      default_actions);
-
-  ClientStateMachine_t state_machine4(&simple_client, transitions,
-                                      default_transitions, default_actions);
 }

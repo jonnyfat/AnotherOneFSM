@@ -9,70 +9,75 @@ namespace aofsm {
 
 using std::size_t;
 
-// Die Klasse implementiert eine State-Machine.
-//
-// Ein Client-Class kann es benutzen, um die eigenen Methoden
+// Die Klasse StateMachine erlaubt es einem Client-Class die eigenen Methoden
 // Zustands- und Erreignis-abhängig aufzurufen.
 //
-// Dafür muss der Client-Class die Klasse StateMachine als Member instanziieren.
+// Die Events und Zustände müssem als Enums definiert sein.
 //
-// Die Events und Zustände muss das Client-Class als Enums definieren.
-//
-// Die Transitionen von State-Machine als Array an Konstruktor von StateMachine
-// übergeben.
+// Die Transition können als einen einfachen Array zusammengefasst werden und
+// müssen an Konstruktor von StateMachine übergeben werden.
 //
 // Beispiel:
-//  - Das Client Class hat zwei Zustände: StateA , StateB und ein Ereignis
-//    EventAction.
-//  - Beim Ereignis EventAction muss
-//    -  in StateA muss Methode DoA des Clients
-//    -  in StateB muss Methode DoB des Clients
 //
-//  Das Client-Class muss die StateMachine auf folgende Weise benutzen:
+//  Statemachine
+//  - zwei Zustände: StateA(Initial), StateB
+//  - ein Ereignis: EventAction.
+//  - zwei Transitionen:
+//    -  StateA EventAction/DoA -> StateA
+//    -  StateB EventAction/DoB -> StateB
 //
-//  - States und Events als nested Enum deklarieren
+//  Notwendige Konfiguration der StateMachine:
+//
+//  - States und Events als nested Enum in Client-Class:
 //      -  enum State { kStateA, kStateB, kStateCount, kInitState = kStateA};
 //      -  enum Event { kEventAction , kEventCount };
 //
-//  - Transitionen werden als einen Array zusammengestellt.
+//  - Transitionen werden als einen Array definiert.
 //
 //     {{kStateA, kEventAction, kStateA, &Client::DoA},
 //      {kStateB, kEventAction, kStateB, &Client::DoB}}
 //
-//  - StateMachine wird als Member instantieert
+//  Benutzung:
 //
-//      An Konstruktor wird this-Pointer und Array mit Transitionen übergeben
+//  - StateMachine muss mit dem Client-Class als Template-Parameter instantiiert
+//    werde,
+//  - die StateMachine-Instanz kann ein Member von Client-Class sein
 //
-//  - Der aktuelle Zustand kann SetCurrentState() gesetzt werden.
+//  - an Konstruktor wird this-Pointer und Array mit Transitionen übergeben
+//
+//  - In diesem Beispiel kann der Zustand per SetCurrentState() gesetzt werden,
+//    normaleweise über Transitionen von State-Machine.
 //
 //  - Wenn das Client-Class die Methode Trigger(kEventAction) von
-//    StateMachine-Istanz aufruft, wird zustandabhängig DoA oder DoB aufgerufen.
+//    StateMachine-Istanz aufruft, wird zustandabhängig DoA oder DoB von
+//    Client-Class aufgerufen.
 //
 // Allgemeine Beschreibung der Schnittstellle:
 //
-//  Die State-Machine muss mit folgenden Parametern parametriert werden:
-//  - Anzahl der Zustände
-//  - Anzahl der Events
-//  - Initialzustand
-//  - Transitionen
-//  - Default-Transitionen (optional)
-//  - Default-Actions (optional)
-//  - Zustand-Schachtelung (optional)
+//  Die State-Machine ist ein Variadic Template und muss mit folgenden
+//  Parametern parametriert werden:
+//  - Anzahl der Zustände ( kStateCount in enum State von Client-Class)
+//  - Anzahl der Events (kEventCount in enum Event von Client-Class)
+//  - Initialzustand (kInitState in enum State von Client-Class)
+//  - Transitionen (Array von StateMachine<>::Transition)
 //
 // Template-Parameter:
 //  - Client_t - Client-Class
 //  - State_t - Clients Enumeration für Zustände;
 //  - Event_T - Clients Enumeration für Events
+//  - MAX_ACTIONS_PER_TRANSITION - Maximale Anzahl von Actions pro Transition
+//  - ActionParameterTypes - template parameter pack :  Signatur von
+//    Action-Methoden. Wenn z.B. leer dann sind Action-Methoden void(void)
 //
 // Anforderungen Template-Parameter:
 //
 //  - Enum State_t muss Elemente kInitState und kStateCount haben:
 //    -  enum State { .... , kStateCount, kInitState = ...};
-//     -- kStateCount Anzahl der Zustände
-//     -- kInitState - Initiale Zustand
+//    - kStateCount Anzahl der Zustände
+//    - kInitState - Initiale Zustand
 //  - Enum Event_t muss Element kEventCount haben
 //    -  enum Event { .... , kEventCount };
-//     --  kEventCount - Anzahl der Events
+//    -  kEventCount - Anzahl der Events
 //
 //
 template <typename Client_t, typename State_t = typename Client_t::State,
@@ -81,16 +86,19 @@ template <typename Client_t, typename State_t = typename Client_t::State,
           typename... ActionParameterTypes>
 class StateMachine {
  public:
-  // Pointer auf Member-Methode des Clients, welche beim Triggern von
-  // State-Machine-Events aufgerufen werden.
+  // Pointer auf Member-Methode des Clients, welche bei einer Transition als
+  // Action aufgerufen wird.
   using Action_t = void (Client_t::*)(ActionParameterTypes...);
 
-  // Pointer auf Member-Methode des Clients, welche beim Ausführen von
-  // Transition als Guard dient: es soll ein bool zurückgeben. Bei true wird 1.
-  // Transition ausgeführt, bei false 2.
+  // Pointer auf Member-Methode des Clients, welche bei einer Guarded-Transition
+  // als Guard dient.
+  // Der Rückgabewert von Guard bestimmt, welche von zwei möglichen Transitionen
+  // stattfinden soll.
+  // Bei true wird 1. Transition ausgeführt, bei false die 2.
   using Guard_t = bool (Client_t::*)(ActionParameterTypes...);
 
-  // Array von Pointern auf Client-Member-Methoden.
+  // Fasst mehrere Member-Methoden des Clients, welche bei einer Transition
+  // aufgerufen werden.
   struct ArrayOfActions {
     template <class... Actions>
     ArrayOfActions(Actions... actions)
@@ -100,8 +108,32 @@ class StateMachine {
     Action_t action_array[MAX_ACTIONS_PER_TRANSITION];
   };
 
-  struct StateTransitionDef {
+  // Um Konfiguration von State-Machine zu vereinfachen werden alle Transitionen
+  // als eine Datenstruktur von Typ Transition definiert.
+  // Mit TransitionType, wird die Art der Transition vermerkt.
+  enum class TransitionType {
+    kDefaultAction,  ///< Default-Aktion für ein Event in beliebigen Zustand.
+                     ///< Nur das Event und Actions sind angegeben.
+                     ///< Gilt für alle Zustände in welchen für das Event keine
+                     ///< DefaultTransitionen und keine Transition festgelegt
+                     ///< sind.
+
+    kDefaultTransition,  ///< Default-Transition für ein Event aus beliebigen
+                         ///< Zustand fürhrt in einen anderen Zustand.
+                         ///< Nur Event, Zielzustand und Actions sind angegeben.
+                         ///< Gilt für alle Zustände in welchen für das Event
+                         ///< keine Transition festgelegt ist.
+
+    kTransition  ///< Transition für ein Event in einem Zustand führt in einen
+                 ///< anderen Zustand.
+                 ///< Gilt für alle Zustände für welche keine
+                 ///< Transition und keine Transition festgelegt
+                 ///< ist.
+  };
+
+  struct Transition {
    private:
+    TransitionType transition_type_;
     State_t src_state_;
     Event_t event_;
     Guard_t guard_action_;
@@ -111,9 +143,33 @@ class StateMachine {
     ArrayOfActions trans2_actions_;
 
    public:
-    StateTransitionDef(State_t src_state, Event_t event, State_t dst_state,
-                       const ArrayOfActions& actions)
-        : src_state_{src_state},
+    // Konstruktor für DefaultAction
+    Transition(Event_t event, const ArrayOfActions& actions)
+        : transition_type_{TransitionType::kDefaultAction},
+          src_state_{State_t::kStateCount},         ///<  ungültig
+          event_{event},                            ///< gültig
+          guard_action_{nullptr},                   ///<  kein Guard
+          trans1_dst_state_{State_t::kStateCount},  ///<  ungültig
+          trans1_actions_{actions},                 ///< gültig
+          trans2_dst_state_{State_t::kStateCount},  ///<  ungültig
+          trans2_actions_{} {}                      ///<  leer
+
+    // Konstruktor für DefaultTransition
+    Transition(Event_t event, State_t dst_state, const ArrayOfActions& actions)
+        : transition_type_{TransitionType::kDefaultTransition},
+          src_state_{State_t::kStateCount},         ///<  ungültig
+          event_{event},                            ///< gültig
+          guard_action_{nullptr},                   ///<  kein Guard
+          trans1_dst_state_{dst_state},             ///< gültig
+          trans1_actions_{actions},                 ///< gültig
+          trans2_dst_state_{State_t::kStateCount},  ///<  ungültig
+          trans2_actions_{} {}                      ///<  leer
+
+    // Konstruktor für Transition ohne Guard
+    Transition(State_t src_state, Event_t event, State_t dst_state,
+               const ArrayOfActions& actions)
+        : transition_type_{TransitionType::kTransition},
+          src_state_{src_state},
           event_{event},
           guard_action_{nullptr},
           trans1_dst_state_{dst_state},
@@ -137,7 +193,7 @@ class StateMachine {
   };
 
   template <size_t N>
-  using TransitionArray = StateTransitionDef[N];
+  using TransitionArray = Transition[N];
 
   template <size_t N>
   using DefaultTransitionArray = StateMachineDefaultTransitionDef[N];
@@ -149,25 +205,6 @@ class StateMachine {
   StateMachine(Client_t* client,
                const TransitionArray<TRANSITION_COUNT>& transitions);
 
-  template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT>
-  StateMachine(Client_t* client,
-               const TransitionArray<TRANSITION_COUNT>& transitions,
-               const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
-                   default_transitions);
-
-  template <size_t TRANSITION_COUNT, size_t DEFAULT_ACTION_COUNT>
-  StateMachine(Client_t* client,
-               const TransitionArray<TRANSITION_COUNT>& transitions,
-               const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions);
-
-  template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT,
-            size_t DEFAULT_ACTION_COUNT>
-  StateMachine(Client_t* client,
-               const TransitionArray<TRANSITION_COUNT>& transitions,
-               const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
-                   default_transitions,
-               const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions);
-
   virtual ~StateMachine() = default;
 
   void Trigger(Event_t event, ActionParameterTypes... params);
@@ -176,9 +213,12 @@ class StateMachine {
 
  private:
   struct EventTransition {
-    Guard_t guard_action;
+    Guard_t guard_action;  ///< Bestimmt ob trans1 oder Trans2 ausgeführt wird
+                           ///< trans1 : Transition, wenn guard_action nullptr
+                           ///< oder liefert true
     State_t trans1_dst_state;
     ArrayOfActions trans1_actions;
+    // trans1 : Transition, wenn guard_action nullptr oder liefert true
     State_t trans2_dst_state;
     ArrayOfActions trans2_actions;
   };
@@ -200,40 +240,6 @@ StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
              ActionParameterTypes...>::
     StateMachine(Client_t* client,
                  const TransitionArray<TRANSITION_COUNT>& transitions)
-    : client_{client} {}
-
-template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-             ActionParameterTypes...>::
-    StateMachine(Client_t* client,
-                 const TransitionArray<TRANSITION_COUNT>& transitions,
-                 const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
-                     default_transitions)
-    : client_{client} {}
-
-template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-template <size_t TRANSITION_COUNT, size_t DEFAULT_ACTION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-             ActionParameterTypes...>::
-    StateMachine(
-        Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
-        const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
-    : client_{client} {}
-
-template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-template <size_t TRANSITION_COUNT, size_t DEFAULT_TRANSITION_COUNT,
-          size_t DEFAULT_ACTION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-             ActionParameterTypes...>::
-    StateMachine(
-        Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
-        const DefaultTransitionArray<DEFAULT_TRANSITION_COUNT>&
-            default_transitions,
-        const DefaultActionArray<DEFAULT_ACTION_COUNT>& default_actions)
     : client_{client} {}
 
 template <typename Client_t, typename State_t, typename Event_t,

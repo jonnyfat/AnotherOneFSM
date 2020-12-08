@@ -64,7 +64,7 @@ class SimlpeClient3 {
 
   using StateMachine = aofsm::StateMachineSimple<SimlpeClient3, 2, Data*>;
 
-  using Transition_t = StateMachine::StateTransitionDef;
+  using Transition_t = StateMachine::Transition;
 
   using DefaultTransition_t = StateMachine::StateMachineDefaultTransitionDef;
 
@@ -82,9 +82,26 @@ class SimlpeClient3 {
 const SimlpeClient3::Transition_t SimlpeClient3::transitions[]
     // {Source-State        Event                Destination-State
     //  Actions}
-    {{kInitState, kStartAEvt, kAState, &SimlpeClient3::DoStartA},
+
+    {{/*Default-Action*/ kDefaultEvent,
+      {
+          &SimlpeClient3::DefaultAction1,
+          &SimlpeClient3::DefaultAction2,
+      }},
+
+     {/*Default-Transition*/ kDefaultEvent,
+      kFinalState,
+      {
+          &SimlpeClient3::DefaultTransition1,
+          &SimlpeClient3::DefaultTransition2,
+      }},
+
+     {kInitState, kStartAEvt, kAState, &SimlpeClient3::DoStartA},
+
      {kInitState, kStartBEvt, kBState, &SimlpeClient3::DoStartB},
+
      {kAState, kEndEvt, kFinalState, &SimlpeClient3::DoEndA},
+
      {kBState,
       kEndEvt,
       kFinalState,
@@ -93,27 +110,7 @@ const SimlpeClient3::Transition_t SimlpeClient3::transitions[]
           &SimlpeClient3::DoEndB,
       }}};
 
-const SimlpeClient3::DefaultTransition_t SimlpeClient3::default_transitions[]
-    // {Source-State        Event                Destination-State
-    //  Actions}
-    {{kDefaultEvent,
-      kFinalState,
-      {
-          &SimlpeClient3::DefaultTransition1,
-          &SimlpeClient3::DefaultTransition2,
-      }}};
-
-const SimlpeClient3::DefaultAction_t SimlpeClient3::default_actions[]
-    // {Source-State        Event                Destination-State
-    //  Actions}
-    {{kDefaultEvent,
-      {
-          &SimlpeClient3::DefaultAction1,
-          &SimlpeClient3::DefaultAction2,
-      }}};
-
-SimlpeClient3::SimlpeClient3()
-    : state_machine(this, transitions, default_transitions, default_actions) {}
+SimlpeClient3::SimlpeClient3() : state_machine(this, transitions) {}
 
 TEST(aofsm_StateMachineActionWithParam, trigger) {
   SimlpeClient3 simple_client;
