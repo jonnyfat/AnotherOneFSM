@@ -66,49 +66,44 @@ class SimlpeClient3 {
 
   using Transition_t = StateMachine::Transition;
 
-  using DefaultTransition_t = StateMachine::StateMachineDefaultTransitionDef;
-
-  using DefaultAction_t = StateMachine::DefaultAction;
-
   static const Transition_t transitions[];
-
-  static const DefaultTransition_t default_transitions[];
-
-  static const DefaultAction_t default_actions[];
 
   StateMachine state_machine;
 };
 
+// clang-format off
+
 const SimlpeClient3::Transition_t SimlpeClient3::transitions[]
-    // {Source-State        Event                Destination-State
+    // {Source-State        Event               Destination-State
     //  Actions}
 
-    {{/*Default-Action*/ kDefaultEvent,
-      {
-          &SimlpeClient3::DefaultAction1,
-          &SimlpeClient3::DefaultAction2,
-      }},
+    // Default-Action
+    {{                      kDefaultEvent,
+                            {&SimlpeClient3::DefaultAction1,
+                             &SimlpeClient3::DefaultAction2}
+    },
+    // Default-Transition
+     { kDefaultEvent,     kFinalState,
+                             {&SimlpeClient3::DefaultTransition1,
+                              &SimlpeClient3::DefaultTransition2}},
 
-     {/*Default-Transition*/ kDefaultEvent,
-      kFinalState,
-      {
-          &SimlpeClient3::DefaultTransition1,
-          &SimlpeClient3::DefaultTransition2,
-      }},
+     // Transitions
+     { kInitState,           kStartAEvt,        kAState,
+                             &SimlpeClient3::DoStartA
+     },
+     { kInitState,           kStartBEvt,        kBState,
+                             &SimlpeClient3::DoStartB},
 
-     {kInitState, kStartAEvt, kAState, &SimlpeClient3::DoStartA},
+     { kAState,              kEndEvt,           kFinalState,
+                             &SimlpeClient3::DoEndA},
 
-     {kInitState, kStartBEvt, kBState, &SimlpeClient3::DoStartB},
+     { kBState,              kEndEvt,           kFinalState,
+                             {&SimlpeClient3::DoPreEndB,
+                              &SimlpeClient3::DoEndB}
+     }
+    };
 
-     {kAState, kEndEvt, kFinalState, &SimlpeClient3::DoEndA},
-
-     {kBState,
-      kEndEvt,
-      kFinalState,
-      {
-          &SimlpeClient3::DoPreEndB,
-          &SimlpeClient3::DoEndB,
-      }}};
+// clang-format on
 
 SimlpeClient3::SimlpeClient3() : state_machine(this, transitions) {}
 

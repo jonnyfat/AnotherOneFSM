@@ -143,7 +143,9 @@ class StateMachine {
     ArrayOfActions trans2_actions_;
 
    public:
-    // Konstruktor für DefaultAction
+    // Parametrieren von Default-Action für ein Event der State-Machine.
+    // Es gilt für alle Zustädnde der Machine für welche keine
+    // Default-Transition und kein Transition für das Event parametriert ist.
     Transition(Event_t event, const ArrayOfActions& actions)
         : transition_type_{TransitionType::kDefaultAction},
           src_state_{State_t::kStateCount},         ///<  ungültig
@@ -154,7 +156,9 @@ class StateMachine {
           trans2_dst_state_{State_t::kStateCount},  ///<  ungültig
           trans2_actions_{} {}                      ///<  leer
 
-    // Konstruktor für DefaultTransition
+    // Parametrierung einer Default-Transition für ein Event der State-Machine.
+    // Es gilt für alle Zustände der Machine für welche keine Transition für
+    // das Event parametriert ist.
     Transition(Event_t event, State_t dst_state, const ArrayOfActions& actions)
         : transition_type_{TransitionType::kDefaultTransition},
           src_state_{State_t::kStateCount},         ///<  ungültig
@@ -165,7 +169,8 @@ class StateMachine {
           trans2_dst_state_{State_t::kStateCount},  ///<  ungültig
           trans2_actions_{} {}                      ///<  leer
 
-    // Konstruktor für Transition ohne Guard
+    // Parametrierung einer unbedingten Transition für ein Event in einem
+    // Zustand.
     Transition(State_t src_state, Event_t event, State_t dst_state,
                const ArrayOfActions& actions)
         : transition_type_{TransitionType::kTransition},
@@ -176,30 +181,24 @@ class StateMachine {
           trans1_actions_{actions},
           trans2_dst_state_{State_t::kStateCount},
           trans2_actions_{} {}
-  };
 
-  // Parametrierung eines Default-Übergangs für die State-Machine.
-  // Es gilt für alle Zustädnde der Machine für welche keine Transition mit dem
-  // Event definiert ist definiert ist.
-  struct StateMachineDefaultTransitionDef {
-    Event_t event;
-    State_t dst_state;
-    ArrayOfActions actions;
-  };
-
-  struct DefaultAction {
-    Event_t event;
-    ArrayOfActions actions;
+    // Parametrierung einer bedingten Transition für ein Event in einem
+    // Zustand.
+    Transition(State_t src_state, Event_t event, Guard_t guard_action,
+               State_t dst_state_1, const ArrayOfActions& actions_1,
+               State_t dst_state_2, const ArrayOfActions& actions_2)
+        : transition_type_{TransitionType::kTransition},
+          src_state_{src_state},
+          event_{event},
+          guard_action_{guard_action},
+          trans1_dst_state_{dst_state_1},
+          trans1_actions_{actions_1},
+          trans2_dst_state_{dst_state_2},
+          trans2_actions_{actions_2} {}
   };
 
   template <size_t N>
   using TransitionArray = Transition[N];
-
-  template <size_t N>
-  using DefaultTransitionArray = StateMachineDefaultTransitionDef[N];
-
-  template <size_t N>
-  using DefaultActionArray = DefaultAction[N];
 
   template <size_t TRANSITION_COUNT>
   StateMachine(Client_t* client,

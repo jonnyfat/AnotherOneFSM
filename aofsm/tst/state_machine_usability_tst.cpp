@@ -62,51 +62,39 @@ class SimlpeClient2 {
 
   using Transition_t = StateMachine::Transition;
 
-  using DefaultTransition_t = StateMachine::StateMachineDefaultTransitionDef;
-
-  using DefaultAction_t = StateMachine::DefaultAction;
-
   static const Transition_t transitions[];
-
-  static const DefaultTransition_t default_transitions[];
-
-  static const DefaultAction_t default_actions[];
 
   StateMachine state_machine;
 };
 
+// clang-format off
+
 const SimlpeClient2::Transition_t SimlpeClient2::transitions[]
     // {Source-State        Event                Destination-State
     //  Actions}
-    {{kInitState, kStartAEvt, kAState, &SimlpeClient2::DoStartA},
-     {kInitState, kStartBEvt, kBState, &SimlpeClient2::DoStartB},
-     {kAState, kEndEvt, kFinalState, &SimlpeClient2::DoEndA},
-     {kBState,
-      kEndEvt,
-      kFinalState,
-      {
-          &SimlpeClient2::DoPreEndB,
-          &SimlpeClient2::DoEndB,
-      }}};
+    {{                      kDefaultEvent,
+                            {&SimlpeClient2::DefaultAction1,
+                             &SimlpeClient2::DefaultAction2}
+    },
+    {                       kDefaultEvent,         kFinalState,
+                            {&SimlpeClient2::DefaultTransition1,
+                             &SimlpeClient2::DefaultTransition2}
+    },
+    { kInitState,           kStartAEvt,             kAState,
+                            &SimlpeClient2::DoStartA
+    },
+    { kInitState,           kStartBEvt,             kBState,
+                            &SimlpeClient2::DoStartB
+    },
+    { kAState,              kEndEvt,                kFinalState,
+                            &SimlpeClient2::DoEndA
+    },
+    { kBState,              kEndEvt,                kFinalState,
+                            {&SimlpeClient2::DoPreEndB,
+                             &SimlpeClient2::DoEndB}
+    }};
 
-const SimlpeClient2::DefaultTransition_t SimlpeClient2::default_transitions[]
-    // {Source-State        Event                Destination-State
-    //  Actions}
-    {{kDefaultEvent,
-      kFinalState,
-      {
-          &SimlpeClient2::DefaultTransition1,
-          &SimlpeClient2::DefaultTransition2,
-      }}};
-
-const SimlpeClient2::DefaultAction_t SimlpeClient2::default_actions[]
-    // {Source-State        Event                Destination-State
-    //  Actions}
-    {{kDefaultEvent,
-      {
-          &SimlpeClient2::DefaultAction1,
-          &SimlpeClient2::DefaultAction2,
-      }}};
+// clang-format on
 
 SimlpeClient2::SimlpeClient2() : state_machine(this, transitions) {}
 
