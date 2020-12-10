@@ -29,7 +29,7 @@ using std::size_t;
 //  Notwendige Konfiguration der StateMachine:
 //
 //  - States und Events als nested Enum in Client-Class:
-//      -  enum State { kStateA, kStateB, kStateCount, kInitState = kStateA};
+//      -  enum State { kStateA, kStateB, kStateCount, INITIAL_STATE = kStateA};
 //      -  enum Event { kEventAction , kEventCount };
 //
 //  - Transitionen werden als einen Array definiert.
@@ -58,7 +58,7 @@ using std::size_t;
 //  Parametern parametriert werden:
 //  - Anzahl der Zustände ( kStateCount in enum State von Client-Class)
 //  - Anzahl der Events (kEventCount in enum Event von Client-Class)
-//  - Initialzustand (kInitState in enum State von Client-Class)
+//  - Initialzustand (INITIAL_STATE in enum State von Client-Class)
 //  - Transitionen (Array von StateMachine<>::Transition)
 //
 // Template-Parameter:
@@ -71,10 +71,10 @@ using std::size_t;
 //
 // Anforderungen Template-Parameter:
 //
-//  - Enum State_t muss Elemente kInitState und kStateCount haben:
-//    -  enum State { .... , kStateCount, kInitState = ...};
+//  - Enum State_t muss Elemente INITIAL_STATE und kStateCount haben:
+//    -  enum State { .... , kStateCount, INITIAL_STATE = ...};
 //    - kStateCount Anzahl der Zustände
-//    - kInitState - Initiale Zustand
+//    - INITIAL_STATE - Initiale Zustand
 //  - Enum Event_t muss Element kEventCount haben
 //    -  enum Event { .... , kEventCount };
 //    -  kEventCount - Anzahl der Events
@@ -95,7 +95,7 @@ class StateMachine {
   // Der Rückgabewert von Guard bestimmt, welche von zwei möglichen Transitionen
   // stattfinden soll.
   // Bei true wird 1. Transition ausgeführt, bei false die 2.
-  using Guard_t = bool (Client_t::*)(ActionParameterTypes...);
+  using Guard_t = bool (Client_t::*)(ActionParameterTypes...) const;
 
   // Fasst mehrere Member-Methoden des Clients, welche bei einer Transition
   // aufgerufen werden.
@@ -227,7 +227,7 @@ class StateMachine {
 
   Client_t* client_{nullptr};
 
-  State_t current_state_{State_t::kInitState};
+  State_t current_state_{State_t::INITIAL_STATE};
 
   StateTransitions state_transitions_[State_t::kStateCount];
 };

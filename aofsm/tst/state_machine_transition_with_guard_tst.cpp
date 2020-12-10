@@ -20,28 +20,28 @@ using std::size_t;
 //                    \DoStartB(Data*))        \DoEndB(Data*))
 //
 //   states :
-//            kInitState, kAState, kBState, kFinalState
+//            INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE
 //   events :
 //            kStartEvt, kEndEvt
 //   actions :
 //             DoStartA, DoStartB, DoEndA, DoEndB,
 //   transitions:
-//         kInitState -[IsA()]-> kAState
+//         INITIAL_STATE -[IsA()]-> A_STATE
 //                kStartEvt/DoStartA
 //
-//         kInitState -[!IsA()]--> kBState
+//         INITIAL_STATE -[!IsA()]--> B_STATE
 //                kStartEvt/DoStartB
 //
-//         kAState -> kFinalState
+//         A_STATE -> FINAL_STATE
 //              kEndEvt/DoEndA
 //
-//         kBState -> kFinalState
+//         B_STATE -> FINAL_STATE
 //              kEndEvt/DoEndB
 //
 
 class SimlpeClient4 {
  public:
-  enum State { kInitState, kAState, kBState, kFinalState, kStateCount };
+  enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
   enum Event { kStartEvt, kEndEvt, kDefaultEvent, kEventCount };
 
   SimlpeClient4(bool is_a);
@@ -51,7 +51,7 @@ class SimlpeClient4 {
   void End() { state_machine.Trigger(kEndEvt); }
 
  private:
-  bool IsA() { return is_a_; }
+  bool IsA() const { return is_a_; }
   void DoStartA() {}
   void DoStartB() {}
   void DoEndA() {}
@@ -63,44 +63,26 @@ class SimlpeClient4 {
 
   bool is_a_{false};
 
-  StateMachine state_machine;
+  StateMachine state_machine{
+      this,
+      // {Source-State        Event               Destination-State
+      //                       Guard
+      //                                    GuardIsTrue-Destination-State
+      //                          GuardIsTrue-Action
+      //                                    GuardIsFalse-Destination-State
+      //                          GuardIsFalse-Action
+      //                       Actions}
+      // {Source-State        Event               Destination-State
+      //                        Actions}
+      {// Transitions
+       {INITIAL_STATE, kStartEvt, &IsA, A_STATE, &DoStartA, B_STATE, &DoStartB},
+
+       {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
+
+       {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 };
 
-SimlpeClient4::SimlpeClient4(bool is_a)
-    : is_a_{is_a},
-      // clang-format off
-      state_machine( this,
-
-              // {Source-State        Event               Destination-State
-              //                       Guard
-              //                                    GuardIsTrue-Destination-State
-              //                          GuardIsTrue-Action
-              //                                    GuardIsFalse-Destination-State
-              //                          GuardIsFalse-Action
-              //                       Actions}
-              // {Source-State        Event               Destination-State
-              //                        Actions}
-              {
-               // Transitions
-               { kInitState,          kStartEvt,
-                                         &IsA,
-                                                           kAState,
-                                          &DoStartA,
-                                                           kBState,
-                                          &DoStartB
-               },
-
-               { kAState,              kEndEvt,            kFinalState,
-                                       &DoEndA
-               },
-
-               { kBState,              kEndEvt,            kFinalState,
-                                       &DoEndB
-               }
-              }
-
-          // clang-format on
-      ) {}
+SimlpeClient4::SimlpeClient4(bool is_a) : is_a_{is_a} {}
 
 TEST(aofsm_StateMachineActionWithGuard, trigger) {
   SimlpeClient4 simple_client_a(true);

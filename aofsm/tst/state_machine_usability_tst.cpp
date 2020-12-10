@@ -17,22 +17,22 @@ using std::size_t;
 //             \DoStartB)                \DoEndB)
 //
 //   states :
-//            kInitState, kAState, kBState, kFinalState
+//            INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE
 //   events :
 //            kStartAEvt, kStartBEvt, kEndEvt
 //   actions :
 //             DoStartA, DoStartB, DoEndA, DoEndB,
 //   transitions:
-//         kInitState -> kAState
+//         INITIAL_STATE -> A_STATE
 //            kStartAEvt/DoStartA
 //
-//         kInitState -> kBState
+//         INITIAL_STATE -> B_STATE
 //            kStartBEvt/DoStartB
 //
-//         kAState -> kFinalState
+//         A_STATE -> FINAL_STATE
 //              kEndEvt/DoEndA
 //
-//         kBState -> kFinalState
+//         B_STATE -> FINAL_STATE
 //              kEndEvt/DoEndB
 //
 
@@ -42,19 +42,18 @@ class SimlpeClient2 {
 
   void StartA() { state_machine.Trigger(kStartAEvt); }
 
+  void StartB() { state_machine.Trigger(kStartBEvt); }
+
+  void End() { state_machine.Trigger(kEndEvt); }
+
  private:
   void DoStartA() {}
   void DoStartB() {}
   void DoEndA() {}
-  void DoPreEndB() {}
   void DoEndB() {}
-  void DefaultAction1() {}
-  void DefaultAction2() {}
-  void DefaultTransition1() {}
-  void DefaultTransition2() {}
 
-  enum State { kInitState, kAState, kBState, kFinalState, kStateCount };
-  enum Event { kStartAEvt, kStartBEvt, kEndEvt, kDefaultEvent, kEventCount };
+  enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
+  enum Event { kStartAEvt, kStartBEvt, kEndEvt, kEventCount };
 
   friend class aofsm::StateMachine<SimlpeClient2>;
 
@@ -72,26 +71,17 @@ class SimlpeClient2 {
 const SimlpeClient2::Transition_t SimlpeClient2::transitions[]
     // {Source-State        Event                Destination-State
     //  Actions}
-    {{                      kDefaultEvent,
-                            {&SimlpeClient2::DefaultAction1,
-                             &SimlpeClient2::DefaultAction2}
+    {{ INITIAL_STATE,           kStartAEvt,             A_STATE,
+                            &DoStartA
     },
-    {                       kDefaultEvent,         kFinalState,
-                            {&SimlpeClient2::DefaultTransition1,
-                             &SimlpeClient2::DefaultTransition2}
+    { INITIAL_STATE,           kStartBEvt,             B_STATE,
+                            &DoStartB
     },
-    { kInitState,           kStartAEvt,             kAState,
-                            &SimlpeClient2::DoStartA
+    { A_STATE,              kEndEvt,                FINAL_STATE,
+                            &DoEndA
     },
-    { kInitState,           kStartBEvt,             kBState,
-                            &SimlpeClient2::DoStartB
-    },
-    { kAState,              kEndEvt,                kFinalState,
-                            &SimlpeClient2::DoEndA
-    },
-    { kBState,              kEndEvt,                kFinalState,
-                            {&SimlpeClient2::DoPreEndB,
-                             &SimlpeClient2::DoEndB}
+    { B_STATE,              kEndEvt,                FINAL_STATE,
+                            &DoEndB
     }};
 
 // clang-format on

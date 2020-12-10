@@ -12,55 +12,49 @@ using std::size_t;
 //
 //  Aktionen habe Parameter (Data*)
 //
-//  [Init]+->(StartAEvt -> [StateA] -> (EndEvt  +-> [Final]
+//  [Init]+->(StartAEvt -> [A_STATE] -> (EndEvt  +-> [Final]
 //        |    \DoStartA(Data*))                \DoEndA(Data*))|
 //        |                                      |
-//        +->(StartBEvt -> [StateB] -> (EndEvt  +
+//        +->(StartBEvt -> [B_STATE] -> (EndEvt  +
 //             \DoStartB(Data*))                \DoEndB(Data*))
 //
 //   states :
-//            kInitState, kAState, kBState, kFinalState
+//            INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE
 //   events :
 //            kStartAEvt, kStartBEvt, kEndEvt
 //   actions :
 //             DoStartA, DoStartB, DoEndA, DoEndB,
 //   transitions:
-//         kInitState -> kAState
+//         INITIAL_STATE -> A_STATE
 //            kStartAEvt/DoStartA
 //
-//         kInitState -> kBState
+//         INITIAL_STATE -> B_STATE
 //            kStartBEvt/DoStartB
 //
-//         kAState -> kFinalState
+//         A_STATE -> FINAL_STATE
 //              kEndEvt/DoEndA
 //
-//         kBState -> kFinalState
+//         B_STATE -> FINAL_STATE
 //              kEndEvt/DoEndB
 //
 
 class SimlpeClient3 {
  public:
-  enum State { kInitState, kAState, kBState, kFinalState, kStateCount };
-  enum Event { kStartAEvt, kStartBEvt, kEndEvt, kDefaultEvent, kEventCount };
+  enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
+  enum Event { kStartAEvt, kStartBEvt, kEndEvt, kEventCount };
 
   struct Data {
     char* data{nullptr};
   };
 
-  SimlpeClient3();
-
   void StartA(Data* data) { state_machine.Trigger(kStartAEvt, data); }
+  void StartB(Data* data) { state_machine.Trigger(kStartBEvt, data); }
 
  private:
   void DoStartA(Data*) {}
   void DoStartB(Data*) {}
   void DoEndA(Data*) {}
-  void DoPreEndB(Data*) {}
   void DoEndB(Data*) {}
-  void DefaultAction1(Data*) {}
-  void DefaultAction2(Data*) {}
-  void DefaultTransition1(Data*) {}
-  void DefaultTransition2(Data*) {}
 
   using StateMachine = aofsm::StateMachineSimple<SimlpeClient3, 2, Data*>;
 
@@ -68,44 +62,15 @@ class SimlpeClient3 {
 
   static const Transition_t transitions[];
 
-  StateMachine state_machine;
+  StateMachine state_machine{
+      this,  // {Source-State        Event               Destination-State
+             //  Actions}
+      {      // Transitions
+       {INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
+       {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
+       {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
+       {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 };
-
-// clang-format off
-
-const SimlpeClient3::Transition_t SimlpeClient3::transitions[]
-    // {Source-State        Event               Destination-State
-    //  Actions}
-
-    // Default-Action
-    {{                      kDefaultEvent,
-                            {&SimlpeClient3::DefaultAction1,
-                             &SimlpeClient3::DefaultAction2}
-    },
-    // Default-Transition
-     { kDefaultEvent,     kFinalState,
-                             {&SimlpeClient3::DefaultTransition1,
-                              &SimlpeClient3::DefaultTransition2}},
-
-     // Transitions
-     { kInitState,           kStartAEvt,        kAState,
-                             &SimlpeClient3::DoStartA
-     },
-     { kInitState,           kStartBEvt,        kBState,
-                             &SimlpeClient3::DoStartB},
-
-     { kAState,              kEndEvt,           kFinalState,
-                             &SimlpeClient3::DoEndA},
-
-     { kBState,              kEndEvt,           kFinalState,
-                             {&SimlpeClient3::DoPreEndB,
-                              &SimlpeClient3::DoEndB}
-     }
-    };
-
-// clang-format on
-
-SimlpeClient3::SimlpeClient3() : state_machine(this, transitions) {}
 
 TEST(aofsm_StateMachineActionWithParam, trigger) {
   SimlpeClient3 simple_client;
