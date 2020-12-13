@@ -229,6 +229,20 @@ class StateMachine {
                             ///< andere Transaktion durchgeführt.
   };
 
+  struct StateInfo {
+    StateInfo() = default;
+  };
+
+  template <size_t N>
+  using StateInfoArray = StateInfo[N];
+
+  template <size_t N>
+  struct StateInfos {
+    StateInfos() : state_info_count{0} {}
+    const size_t state_info_count{N};
+    StateInfo state_info[N + 1];
+  };
+
   struct Transition {
    private:
     TransitionType transition_type_;
@@ -305,9 +319,10 @@ class StateMachine {
   template <size_t N>
   using TransitionArray = Transition[N];
 
-  template <size_t TRANSITION_COUNT>
-  StateMachine(Client_t* client,
-               const TransitionArray<TRANSITION_COUNT>& transitions);
+  template <size_t TRANSITION_COUNT, size_t STATE_INFO_COUNT = 0>
+  StateMachine(
+      Client_t* client, const TransitionArray<TRANSITION_COUNT>& transitions,
+      const StateInfos<STATE_INFO_COUNT>& state_infos = StateInfos<0>());
 
   virtual ~StateMachine() = default;
 
@@ -339,11 +354,12 @@ class StateMachine {
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-template <size_t TRANSITION_COUNT>
+template <size_t TRANSITION_COUNT, size_t STATE_INFO_COUNT>
 StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
              ActionParameterTypes...>::
     StateMachine(Client_t* client,
-                 const TransitionArray<TRANSITION_COUNT>& transitions)
+                 const TransitionArray<TRANSITION_COUNT>& transitions,
+                 const StateInfos<STATE_INFO_COUNT>& state_infos)
     : client_{client} {}
 
 template <typename Client_t, typename State_t, typename Event_t,
