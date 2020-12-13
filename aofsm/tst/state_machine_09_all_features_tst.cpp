@@ -25,7 +25,14 @@ class SimlpeClient9 {
   //
   //  - INITIAL_STATE-Konstante - Zustand nach der Instanziierung
   //
-  enum State { ONE_STATE, OTHER_STATE, kStateCount, INITIAL_STATE = ONE_STATE };
+  enum State {
+    ONE_STATE,
+    OTHER_STATE,
+    OTHER_STATE_1,
+    OTHER_STATE_2,
+    kStateCount,
+    INITIAL_STATE = ONE_STATE
+  };
   //
   // enum Event, mit ...
   //
@@ -35,7 +42,6 @@ class SimlpeClient9 {
   //
   enum Event { kEvent1, kEvent2, kEvent3, kEventCount };
 
- private:
   // Wenn nichts anderes parametriert, haben alle Actions, welche bei
   // Zustandsübergängen aufgerufen werden, Signatur void(void).
   void DoEvent1() {}
@@ -52,11 +58,18 @@ class SimlpeClient9 {
 
   void DoEvent3InOtherState() {}
 
+  void DoOnOtherStateEntry() {}
+  void DoOnOtherStateEntry2() {}
+
+  void DoOnOtherStateExit() {}
+  void DoOnOtherStateExit2() {}
+
   // Im einfachsten Fall muss StateMachine-Template mit der Client Class
   // parametriert werden.
   using ClientStateMachine_t = aofsm::StateMachine<SimlpeClient9>;
 
-  // Bei Instantiierung muss Zeiger auf Client Class-Instanz übergeben werden.
+  // Bei Instantiierung muss Zeiger auf Client Class-Instanz übergeben
+  // werden.
   //
   // Zweites Parameter: Array von Transition-Entries
   ClientStateMachine_t state_machine_{
@@ -65,8 +78,8 @@ class SimlpeClient9 {
           // Default-Actionen
           //
           // Event | Aktion
-          {kEvent1, &DoEvent1},  ///< Wenn weiter nichts anderes spezifiziert,
-                                 ///< dann wird bei kEvent1 in
+          {kEvent1, &DoEvent1},  ///< Wenn weiter nichts anderes
+                                 ///< spezifiziert, dann wird bei kEvent1 in
                                  ///< allen Zuständen DoEvent1 aufgerufen,
                                  ///< der Zustand wird nicht gewechselt.
 
@@ -97,6 +110,19 @@ class SimlpeClient9 {
 
           // überschreibt Default-Transition für kEvent2 in OTHER_STATE
           {OTHER_STATE, kEvent2, ONE_STATE, {&DoEvent2, &DoEvent2InOtherState}},
+      },
+      {
+          // Parametrierung der Zuständen
+          {OTHER_STATE, &DoOnOtherStateEntry, &DoOnOtherStateExit,
+           OTHER_STATE_1,
+           OTHER_STATE_2},  ///< OnEntry und OnExit, 2 Sub-Zustände
+          {OTHER_STATE, {}, &DoOnOtherStateExit},   ///< nur OnExit
+          {OTHER_STATE, &DoOnOtherStateEntry, {}},  ///< nur OnEntry
+          {OTHER_STATE,
+           {&DoOnOtherStateEntry, &DoOnOtherStateEntry2},
+           {&DoOnOtherStateExit, &DoOnOtherStateExit2},
+           OTHER_STATE_1,
+           OTHER_STATE_2},  ///< OnEntry und OnExit
       }};
 
  public:
