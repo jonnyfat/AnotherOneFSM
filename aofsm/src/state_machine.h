@@ -72,12 +72,104 @@ using std::size_t;
 // Anforderungen Template-Parameter:
 //
 //  - Enum State_t muss Elemente INITIAL_STATE und kStateCount haben:
-//    -  enum State { .... , kStateCount, INITIAL_STATE = ...};
+//    - enum State { .... , kStateCount, INITIAL_STATE = ...};
 //    - kStateCount Anzahl der Zustände
-//    - INITIAL_STATE - Initiale Zustand
+//    - INITIAL_STATE - Initiale Zustand bei Instanziiierung
+//    - Mehrere State-Konstanten, eine Konstante pro Zustand mit belibigen Namen
+//
+//    - Werte von State-Konstanten müssen
+//      - im Beriech [0:kStateCount) liegen
+//      - eindeutig sein
+//
 //  - Enum Event_t muss Element kEventCount haben
 //    -  enum Event { .... , kEventCount };
 //    -  kEventCount - Anzahl der Events
+//
+//    -  Werte von Event-Konstanten müssen
+//      - im Beriech [0:kEventCount) liegen
+//      - eindeutig sein
+//
+// Verwendung:
+//
+// Parametrierung: mit Client-Class und bei Bedarf mit anderen
+//                 Template-Parameter parametrieren.
+//
+// Template-Parameter MAX_ACTIONS_PER_TRANSITION begrenzt maximale
+//         Anzahl an Aktionen pro Transition.
+//
+// Instantiierung: mit ...
+//             - Zeiger auf Client-Class-Instanz
+//             - Tabelle mit Transitionen
+//
+// Tabelle mit Transitionen:
+//   - Ganze Tabelle in {} - Klammern
+//
+//   - Jeder Eintrag in {} - Klammern
+//
+//   - Einträge mit ',' getrennt
+//
+// Eintragsarten in der Tabelle mit Transitionen:
+//
+//   - Default-Action für Event
+//
+//     * für ein Event in einem beleibiegen Zustand parametriert eine oder
+//       mehrere Actionen
+//
+//     * kein Zustandswechsel
+//
+//     * gilt nur dann, wenn für das Event keine Default-Transition parametriert
+//       ist
+//
+//     * gilt nur für Zustände, für welche keine Transition für das Event
+//       parametriert ist.
+//
+//     * Format:
+//      {Event, Action}
+//      oder
+//      {Event, {Action1,Action2, ....} }
+//
+//   - Default-Transition für Event
+//
+//     * für ein Event in einem beleibiegen Zustand parametriert eine oder
+//       mehrere Actionen und Übergang in den Zielzustand
+//
+//     * überschreibt Default-Action für das Event, falls fälschlicherweise
+//       parametriert ist.
+//
+//     * gilt nur für Zustände, für welche keine Transition für das Event
+//       parametriert ist.
+//
+//     * Format:
+//      {Event, Zielzustand, Action}
+//      oder
+//      {Event, Zielzustand, {Action1,Action2, ....} }
+//
+//   - Transition
+//
+//     * für ein Zustand und Event parametriert eine oder mehrere Actionen und
+//       ein Übergang in einen Zielzustand
+//
+//     * überschreibt Default-Action oder Default-Transition für das Event in
+//       dem Zustand
+//
+//     * Format:
+//      {Zustand, Event, Zielzustand, Action}
+//      oder
+//      {Zustand, Event, Zielzustand, {Action1,Action2, ....} }
+//
+//   - Bedingte Transition
+//
+//     * für ein Zustand und Event parametriert einen Guard, welches bool
+//       liefern bool, und zwei Transitionen(Zuelzustand,Actions) jeweils für
+//       true und false Rückgabewerte von Guard.
+//
+//     * Funktionsweise: wenn im Zustand das Event getriggert wird, dann wird
+//        guard aufgerufen.
+//        Wenn Guard true liefert, wird transition 1 durchgeführt
+//        Wenn Guard false liefert, wird transition 2 durchgeführt
+//
+//     * überschreibt Default-Action/Default-Transition für das Event in dem
+//       Zustand
 //
 //
 template <typename Client_t, typename State_t = typename Client_t::State,
@@ -115,7 +207,7 @@ class StateMachine {
     kDefaultAction,  ///< Default-Aktion für ein Event in beliebigen Zustand.
                      ///< Nur das Event und Actions sind angegeben.
                      ///< Gilt für alle Zustände in welchen für das Event keine
-                     ///< DefaultTransitionen und keine Transition festgelegt
+                     ///< Default-Transitionen und keine Transition festgelegt
                      ///< sind.
 
     kDefaultTransition,  ///< Default-Transition für ein Event aus beliebigen
@@ -124,23 +216,36 @@ class StateMachine {
                          ///< Gilt für alle Zustände in welchen für das Event
                          ///< keine Transition festgelegt ist.
 
-    kTransition  ///< Transition für ein Event in einem Zustand führt in einen
-                 ///< anderen Zustand.
-                 ///< Gilt für alle Zustände für welche keine
-                 ///< Transition und keine Transition festgelegt
-                 ///< ist.
+    kTransition,  ///< Transition für ein Event in einem Zustand führt in einen
+                  ///< anderen Zustand.
+                  ///< Gilt für alle Zustände für welche keine
+                  ///< ConditionalTransition festgelegt ist.
+
+    kConditionalTransition  ///< Bedingte Transition für ein Event in einem
+                            ///< Zustand.
+                            ///< Enthält ein Guard und zwei Transitionen.
+                            ///< Bei Triggerung wird der Guard aufgerufen und je
+                            ///< nach Rückgabewert wird entweder eine oder
+                            ///< andere Transaktion durchgeführt.
   };
 
   struct Transition {
    private:
     TransitionType transition_type_;
-    State_t src_state_;
-    Event_t event_;
-    Guard_t guard_action_;
-    State_t trans1_dst_state_;
-    ArrayOfActions trans1_actions_;
-    State_t trans2_dst_state_;
-    ArrayOfActions trans2_actions_;
+
+    State_t src_state_;  ///< nur bei kTransition und kConditionalTransition
+
+    Event_t event_;  ///< für alle TransitionType
+
+    Guard_t guard_action_;  ///< nur bei kConditionalTransition
+
+    State_t trans1_dst_state_;  ///< nicht für kDefaultAction
+
+    ArrayOfActions trans1_actions_;  ///< für alle TransitionType
+
+    State_t trans2_dst_state_;  ///< nur bei kConditionalTransition
+
+    ArrayOfActions trans2_actions_;  ///< nur bei kConditionalTransition
 
    public:
     // Parametrieren von Default-Action für ein Event der State-Machine.
@@ -187,7 +292,7 @@ class StateMachine {
     Transition(State_t src_state, Event_t event, Guard_t guard_action,
                State_t dst_state_1, const ArrayOfActions& actions_1,
                State_t dst_state_2, const ArrayOfActions& actions_2)
-        : transition_type_{TransitionType::kTransition},
+        : transition_type_{TransitionType::kConditionalTransition},
           src_state_{src_state},
           event_{event},
           guard_action_{guard_action},

@@ -1,4 +1,6 @@
 // copyright Yevgen
+//
+// Actions bei Transitionen haben Parameter
 
 #include <cstddef>
 
@@ -38,7 +40,7 @@ using std::size_t;
 //              kEndEvt/DoEndB
 //
 
-class SimlpeClient3 {
+class SimlpeClient2 {
  public:
   enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
   enum Event { kStartAEvt, kStartBEvt, kEndEvt, kEventCount };
@@ -49,6 +51,7 @@ class SimlpeClient3 {
 
   void StartA(Data* data) { state_machine.Trigger(kStartAEvt, data); }
   void StartB(Data* data) { state_machine.Trigger(kStartBEvt, data); }
+  void End() { state_machine.Trigger(kEndEvt, nullptr); }
 
  private:
   void DoStartA(Data*) {}
@@ -56,24 +59,23 @@ class SimlpeClient3 {
   void DoEndA(Data*) {}
   void DoEndB(Data*) {}
 
-  using StateMachine = aofsm::StateMachineSimple<SimlpeClient3, 2, Data*>;
+  using StateMachine = aofsm::StateMachineSimple<SimlpeClient2, 2, Data*>;
 
   using Transition_t = StateMachine::Transition;
 
   static const Transition_t transitions[];
 
-  StateMachine state_machine{
-      this,  // {Source-State        Event               Destination-State
-             //  Actions}
-      {      // Transitions
-       {INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
-       {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
-       {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
-       {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
+  StateMachine state_machine{this,
+                             {// Transitions
+                              // {Source-State Event Destination-State Actions}
+                              {INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
+                              {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
+                              {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
+                              {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 };
 
 TEST(aofsm_StateMachineActionWithParam, trigger) {
-  SimlpeClient3 simple_client;
-  SimlpeClient3::Data data;
+  SimlpeClient2 simple_client;
+  SimlpeClient2::Data data;
   simple_client.StartA(&data);
 }

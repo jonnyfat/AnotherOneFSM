@@ -1,5 +1,7 @@
 // copyright Yevgen
-
+//
+// Pro Zustand und Event: ein Guard, mit bool-Rückgabewert, und zwei Optionale
+// Übergänge (Ziel-Zustand und Actions)
 #include <cstddef>
 
 using std::size_t;
@@ -10,14 +12,17 @@ using std::size_t;
 
 // state machine
 //
-//  In Zustand Init beim Event StartEvt erfolgt übergang in Anhängigkeit von
-//  Guard IsA()
+//  Im Zustand INIT beim Event StartEvt erfolgt Übergang in Abhängigkeit von
+//  Guard IsA().
 //
-//  [Init]+->([IsA()]StartEvt -> [StateA] -> (EndEvt         +-> [Final]
-//        |          \DoStartA(Data*))        \DoEndA(Data*))|
-//        |                                                  |
-//        +->([!IsA()]StartEvt -> [StateB] -> (EndEvt        +
-//                    \DoStartB(Data*))        \DoEndB(Data*))
+// clang-format off
+//
+//  [INITIAL]+->([IsA()]StartEvt -> [A_STATE] -> (EndEvt         +-> [FINAL]
+//           |          \DoStartA(Data*))         \DoEndA(Data*))|
+//           |                                                   |
+//           +->([!IsA()]StartEvt -> [B_STATE] -> (EndEvt        +
+//                       \DoStartB(Data*))         \DoEndB(Data*))
+// clang-format on
 //
 //   states :
 //            INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE
@@ -42,7 +47,7 @@ using std::size_t;
 class SimlpeClient4 {
  public:
   enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
-  enum Event { kStartEvt, kEndEvt, kDefaultEvent, kEventCount };
+  enum Event { kStartEvt, kEndEvt, kEventCount };
 
   SimlpeClient4(bool is_a);
 
@@ -65,20 +70,16 @@ class SimlpeClient4 {
 
   StateMachine state_machine{
       this,
-      // {Source-State        Event               Destination-State
-      //                       Guard
-      //                                    GuardIsTrue-Destination-State
-      //                          GuardIsTrue-Action
-      //                                    GuardIsFalse-Destination-State
-      //                          GuardIsFalse-Action
-      //                       Actions}
-      // {Source-State        Event               Destination-State
-      //                        Actions}
-      {// Transitions
+      {//  Conditional-Transitions
+       // {Source-State Event Guard  GuardIsTrue-Destination-State
+       //                                  GuardIsTrue-Action
+       //                            GuardIsFalse-Destination-State
+       //                                   GuardIsFalse-Action}
        {INITIAL_STATE, kStartEvt, &IsA, A_STATE, &DoStartA, B_STATE, &DoStartB},
-
+       //
+       // Transitions
+       // {Source-State Event  Destination-State  Actions}
        {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
-
        {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 };
 
