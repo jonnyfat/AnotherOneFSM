@@ -64,8 +64,6 @@ class SimlpeClient4 {
 
   using StateMachine = aofsm::StateMachineSimple<SimlpeClient4, 1>;
 
-  using Transition_t = StateMachine::Transition;
-
   bool is_a_{false};
 
   StateMachine state_machine{

@@ -5,6 +5,9 @@
 
 #include <cstddef>
 
+#include "aofsm/src/array_of_actions.h"
+#include "aofsm/src/transition.h"
+
 namespace aofsm {
 
 using std::size_t;
@@ -192,140 +195,44 @@ class StateMachine {
   // Konstante für ungültier StateId
   static constexpr State_t kInvalidStateId = State_t::kStateCount;
 
-  // Fasst mehrere Member-Methoden des Clients, welche bei einer Transition
-  // aufgerufen werden.
-  struct ArrayOfActions {
-    template <class... Actions>
-    ArrayOfActions(Actions... actions)
-        : action_count{sizeof...(actions)}, action_array{actions...} {}
+  // Fasst Zeiger auf mehrere Member-Methoden des Clients, welche bei einer
+  // Transition aufgerufen werden.
+  using ArrayOfActions_t =
+      internal::ArrayOfActions<MAX_ACTIONS_PER_TRANSITION, Action_t>;
 
-    size_t action_count{0};
-    Action_t action_array[MAX_ACTIONS_PER_TRANSITION];
-  };
+  // Konfigurationselement für Transitionen
+  // Wird benutzt um die Transitionen von State-Machine zu parametrieren.
+  using Transition_t =
+      Transition<State_t, Event_t, Guard_t, ArrayOfActions_t, kInvalidStateId>;
 
-  // Um Konfiguration von State-Machine zu vereinfachen werden alle Transitionen
-  // als eine Datenstruktur von Typ Transition definiert.
-  // Mit TransitionType, wird die Art der Transition vermerkt.
-  enum class TransitionType {
-    kDefaultAction,  ///< Default-Aktion für ein Event in beliebigen Zustand.
-                     ///< Nur das Event und Actions sind angegeben.
-                     ///< Gilt für alle Zustände in welchen für das Event keine
-                     ///< Default-Transitionen und keine Transition festgelegt
-                     ///< sind.
-
-    kDefaultTransition,  ///< Default-Transition für ein Event aus beliebigen
-                         ///< Zustand fürhrt in einen anderen Zustand.
-                         ///< Nur Event, Zielzustand und Actions sind angegeben.
-                         ///< Gilt für alle Zustände in welchen für das Event
-                         ///< keine Transition festgelegt ist.
-
-    kTransition,  ///< Transition für ein Event in einem Zustand führt in einen
-                  ///< anderen Zustand.
-                  ///< Gilt für alle Zustände für welche keine
-                  ///< ConditionalTransition festgelegt ist.
-
-    kConditionalTransition  ///< Bedingte Transition für ein Event in einem
-                            ///< Zustand.
-                            ///< Enthält ein Guard und zwei Transitionen.
-                            ///< Bei Triggerung wird der Guard aufgerufen und je
-                            ///< nach Rückgabewert wird entweder eine oder
-                            ///< andere Transaktion durchgeführt.
-  };
-
-  struct Transition {
-    TransitionType transition_type_;
-
-    State_t src_state_;  ///< nur bei kTransition und kConditionalTransition
-
-    Event_t event_;  ///< für alle TransitionType
-
-    Guard_t guard_action_;  ///< nur bei kConditionalTransition
-
-    State_t trans1_dst_state_;  ///< nicht für kDefaultAction
-
-    ArrayOfActions trans1_actions_;  ///< für alle TransitionType
-
-    State_t trans2_dst_state_;  ///< nur bei kConditionalTransition
-
-    ArrayOfActions trans2_actions_;  ///< nur bei kConditionalTransition
-
-    // Parametrieren von Default-Action für ein Event der State-Machine.
-    // Es gilt für alle Zustädnde der Machine für welche keine
-    // Default-Transition und kein Transition für das Event parametriert ist.
-    Transition(Event_t event, const ArrayOfActions& actions)
-        : transition_type_{TransitionType::kDefaultAction},
-          src_state_{kInvalidStateId},         ///<  ungültig
-          event_{event},                       ///< gültig
-          guard_action_{nullptr},              ///<  kein Guard
-          trans1_dst_state_{kInvalidStateId},  ///<  ungültig
-          trans1_actions_{actions},            ///< gültig
-          trans2_dst_state_{kInvalidStateId},  ///<  ungültig
-          trans2_actions_{} {}                 ///<  leer
-
-    // Parametrierung einer Default-Transition für ein Event der State-Machine.
-    // Es gilt für alle Zustände der Machine für welche keine Transition für
-    // das Event parametriert ist.
-    Transition(Event_t event, State_t dst_state, const ArrayOfActions& actions)
-        : transition_type_{TransitionType::kDefaultTransition},
-          src_state_{kInvalidStateId},         ///<  ungültig
-          event_{event},                       ///< gültig
-          guard_action_{nullptr},              ///<  kein Guard
-          trans1_dst_state_{dst_state},        ///< gültig
-          trans1_actions_{actions},            ///< gültig
-          trans2_dst_state_{kInvalidStateId},  ///<  ungültig
-          trans2_actions_{} {}                 ///<  leer
-
-    // Parametrierung einer unbedingten Transition für ein Event in einem
-    // Zustand.
-    Transition(State_t src_state, Event_t event, State_t dst_state,
-               const ArrayOfActions& actions)
-        : transition_type_{TransitionType::kTransition},
-          src_state_{src_state},
-          event_{event},
-          guard_action_{nullptr},
-          trans1_dst_state_{dst_state},
-          trans1_actions_{actions},
-          trans2_dst_state_{kInvalidStateId},
-          trans2_actions_{} {}
-
-    // Parametrierung einer bedingten Transition für ein Event in einem
-    // Zustand.
-    Transition(State_t src_state, Event_t event, Guard_t guard_action,
-               State_t dst_state_1, const ArrayOfActions& actions_1,
-               State_t dst_state_2, const ArrayOfActions& actions_2)
-        : transition_type_{TransitionType::kConditionalTransition},
-          src_state_{src_state},
-          event_{event},
-          guard_action_{guard_action},
-          trans1_dst_state_{dst_state_1},
-          trans1_actions_{actions_1},
-          trans2_dst_state_{dst_state_2},
-          trans2_actions_{actions_2} {}
-  };
+  // Um Konfiguration von State-Machine zu vereinfachen werden alle
+  // Transitionen als eine Datenstruktur von Typ Transition definiert. Mit
+  // TransitionType, wird die Art der Transition vermerkt.
+  using TransitionType_t = typename Transition_t::TransitionType;
 
   struct StateInfo {
+    const State_t state;
+
+    const ArrayOfActions_t& on_entry_actions;
+
+    const ArrayOfActions_t& on_exit_actions;
+
+    const size_t sub_states_count{0};
+
+    const State_t sub_states[State_t::kStateCount];
+
     template <class... SubStates>
-    StateInfo(State_t state, const ArrayOfActions& on_entry_actions,
-              const ArrayOfActions& on_exit_actions, SubStates... sub_states)
-        : state_{state},
-          on_entry_actions_{on_entry_actions},
-          on_exit_actions_{on_exit_actions},
-          sub_states_count_{sizeof...(sub_states)},
-          sub_states_{sub_states...} {}
-
-    State_t state_;
-
-    const ArrayOfActions& on_entry_actions_;
-
-    const ArrayOfActions& on_exit_actions_;
-
-    size_t sub_states_count_{0};
-
-    State_t sub_states_[State_t::kStateCount];
+    StateInfo(State_t state, const ArrayOfActions_t& on_entry_actions,
+              const ArrayOfActions_t& on_exit_actions, SubStates... sub_states)
+        : state{state},
+          on_entry_actions{on_entry_actions},
+          on_exit_actions{on_exit_actions},
+          sub_states_count{sizeof...(sub_states)},
+          sub_states{sub_states...} {}
   };
 
   template <size_t N>
-  using TransitionArray = Transition[N];
+  using TransitionArray = Transition_t[N];
 
   template <size_t N>
   using StateInfoArray = StateInfo[N];
@@ -350,12 +257,16 @@ class StateMachine {
   void SetCurrentState(State_t state);
 
  private:
-  void SetupTransitions(const Transition* transitions, size_t transition_count);
+  void SetupTransitions(const Transition_t* transitions,
+                        size_t transition_count);
 
-  void SetupDefaultAction(const Transition& transition);
-  void SetupDefaultTransition(const Transition& transition);
-  void SetupTransition(const Transition& transition);
-  void SetupConditionalTransition(const Transition& transition);
+  void SetupDefaultAction(const Transition_t& transition);
+
+  void SetupDefaultTransition(const Transition_t& transition);
+
+  void SetupTransition(const Transition_t& transition);
+
+  void SetupConditionalTransition(const Transition_t& transition);
 
   void SetupStates(const StateInfo* state_infos, size_t state_info_count);
 
@@ -366,20 +277,31 @@ class StateMachine {
     Guard_t guard_action;  ///< Bestimmt ob trans1 oder Trans2 ausgeführt wird
                            ///< trans1 : Transition, wenn guard_action nullptr
                            ///< oder liefert true
-    State_t trans1_dst_state;
-    ArrayOfActions trans1_actions;
+
     // trans1 : Transition, wenn guard_action nullptr oder liefert true
+    State_t trans1_dst_state;
+    ArrayOfActions_t trans1_actions;
+
+    // trans2 : Transition, wenn guard_action liefert false
     State_t trans2_dst_state;
-    ArrayOfActions trans2_actions;
+    ArrayOfActions_t trans2_actions;
+
+    void SetupDefaultAction(const ArrayOfActions_t& actions) {
+      guard_action = nullptr;
+      trans1_dst_state = kInvalidStateId;
+      trans1_actions = actions;
+      trans2_dst_state = kInvalidStateId;
+      trans2_actions.SetEmpty();
+    }
   };
   struct StateTransitions {
     bool has_substates_{false};
 
     State_t parent_state{kInvalidStateId};
 
-    ArrayOfActions on_entry_actions;
+    ArrayOfActions_t on_entry_actions;
 
-    ArrayOfActions on_exit_actions;
+    ArrayOfActions_t on_exit_actions;
 
     EventTransition event_transitions[Event_t::kEventCount];
   };
@@ -390,6 +312,42 @@ class StateMachine {
 
   StateTransitions state_transitions_[State_t::kStateCount];
 };
+
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+void StateMachine<
+    Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+    ActionParameterTypes...>::Trigger(Event_t event,
+                                      ActionParameterTypes... params) {
+  if (current_state_ < State_t::kStateCount && event < Event_t::kEventCount) {
+    // Transaction in aktuellem Zustand für den aktuellen Event.
+    const EventTransition& current_transition =
+        state_transitions_[current_state_].event_transitions[event];
+
+    // Die Actions, welche beim Zustandsübergang ausgeführt werden müssen sind
+    // von Guard abhängig
+    const ArrayOfActions_t* transition_action = nullptr;
+
+    Guard_t guard_action = current_transition.guard_action;
+
+    if ((guard_action == nullptr) || ((client_->*guard_action)(params...))) {
+      current_state_ = current_transition.trans1_dst_state;
+      transition_action = &current_transition.trans1_actions;
+    } else {
+      current_state_ = current_transition.trans2_dst_state;
+      transition_action = &current_transition.trans2_actions;
+    }
+
+    transition_action->CallFor(client_, params...);
+  }
+}
+
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                  ActionParameterTypes...>::SetCurrentState(State_t state) {
+  current_state_ = state;
+}
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
@@ -419,57 +377,21 @@ template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 void StateMachine<
     Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-    ActionParameterTypes...>::Trigger(Event_t event,
-                                      ActionParameterTypes... params) {
-  if (current_state_ < State_t::kStateCount && event < Event_t::kEventCount) {
-    // Transaction in aktuellem Zustand für den aktuellen Event.
-    const EventTransition& current_transition =
-        state_transitions_[current_state_].event_transitions[event];
-
-    // Die Actions, welche beim Zustandsübergang ausgeführt werden müssen sind
-    // von Guard abhängig
-    const ArrayOfActions* trans_actions = nullptr;
-
-    Guard_t guard_action = current_transition.guard_action;
-
-    if ((guard_action == nullptr) || ((client_->*guard_action)(params...))) {
-      current_state_ = current_transition.trans1_dst_state;
-      trans_actions = &current_transition.trans1_actions;
-    } else {
-      current_state_ = current_transition.trans2_dst_state;
-      trans_actions = &current_transition.trans2_actions;
-    }
-
-    for (size_t i = 0; i < trans_actions->action_count; ++i) {
-      Action_t action = trans_actions->action_array[i];
-      (client_->*action)(params...);
-    }
-  }
-}
-
-}  // namespace aofsm
-
-template <typename Client_t, typename State_t, typename Event_t,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void aofsm::StateMachine<
-    Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-    ActionParameterTypes...>::SetupTransitions(const Transition* transitions,
+    ActionParameterTypes...>::SetupTransitions(const Transition_t* transitions,
                                                size_t transition_count) {
   auto end = transitions + transition_count;
   for (auto transition = transitions; transition != end; ++transition) {
-    switch (transition->transition_type_) {
-      case TransitionType::kDefaultAction:
+    switch (transition->transition_type) {
+      case TransitionType_t::kDefaultAction:
         SetupDefaultAction(*transition);
         break;
-      case TransitionType::kDefaultTransition:
+      case TransitionType_t::kDefaultTransition:
         SetupDefaultTransition(*transition);
         break;
-
-      case TransitionType::kTransition:
+      case TransitionType_t::kTransition:
         SetupTransition(*transition);
         break;
-
-      case TransitionType::kConditionalTransition:
+      case TransitionType_t::kConditionalTransition:
         SetupConditionalTransition(*transition);
         break;
     }
@@ -478,26 +400,58 @@ void aofsm::StateMachine<
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void aofsm::StateMachine<
+void StateMachine<
     Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
     ActionParameterTypes...>::SetupStates(const StateInfo* state_infos,
                                           size_t state_info_count) {
   auto end = state_infos + state_info_count;
   for (auto state_info = state_infos; state_info != end; ++state_info) {
-    auto& state = state_transitions_[state_info->state_];
-    state.on_entry_actions = state_info->on_entry_actions_;
-    state.on_exit_actions = state_info->on_exit_actions_;
-    SetupSubStates(state_info->state_, state_info->sub_states_,
-                   state_info->sub_states_count_);
+    auto& state = state_transitions_[state_info->state];
+    state.on_entry_actions = state_info->on_entry_actions;
+    state.on_exit_actions = state_info->on_exit_actions;
+    SetupSubStates(state_info->state, state_info->sub_states,
+                   state_info->sub_states_count);
   }
 }
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-inline void aofsm::StateMachine<
+void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                  ActionParameterTypes...>::
+    SetupDefaultAction(const Transition_t& transition) {
+  auto event = transition.event;
+
+  for (auto state : state_transitions_) {
+    state.event_transitions[event].SetupDefaultAction(transition.trans1_action);
+  }
+}
+
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                  ActionParameterTypes...>::
+    SetupDefaultTransition(const Transition_t& transition) {}
+
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                  ActionParameterTypes...>::SetupTransition(const Transition_t&
+                                                                transition) {}
+
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                  ActionParameterTypes...>::
+    SetupConditionalTransition(const Transition_t& transition) {}
+
+template <typename Client_t, typename State_t, typename Event_t,
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+void StateMachine<
     Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
     ActionParameterTypes...>::SetupSubStates(State_t state,
                                              const State_t* substates,
                                              size_t substates_count) {}
+
+}  // namespace aofsm
 
 #endif  // AOFSM_SRC_STATE_MACHINE_H_

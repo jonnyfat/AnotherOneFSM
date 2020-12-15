@@ -61,10 +61,6 @@ class SimlpeClient2 {
 
   using StateMachine = aofsm::StateMachineSimple<SimlpeClient2, 2, Data*>;
 
-  using Transition_t = StateMachine::Transition;
-
-  static const Transition_t transitions[];
-
   StateMachine state_machine{this,
                              {// Transitions
                               // {Source-State Event Destination-State Actions}
