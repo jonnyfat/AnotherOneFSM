@@ -59,6 +59,9 @@ class SimlpeClient1 {
   friend class aofsm::StateMachine<SimlpeClient1>;
 
   using StateMachine = aofsm::StateMachine<SimlpeClient1>;
+  using TransitionTable = aofsm::StateMachine<SimlpeClient1>::TransitionTable;
+
+  static const TransitionTable transitionTable;
 
   StateMachine state_machine{this,
                              {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
@@ -67,7 +70,9 @@ class SimlpeClient1 {
                               {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 };
 
-TEST(aofsm_StateMachine, trigger) {
+SimlpeClient1::
+
+    TEST(aofsm_StateMachine, trigger) {
   SimlpeClient1 simple_client;
   simple_client.StartA();
 }

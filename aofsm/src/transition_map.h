@@ -1,7 +1,7 @@
 // copyright Yevgen
 
-#ifndef AOFSM_SRC_STATE_MACHINE_H_
-#define AOFSM_SRC_STATE_MACHINE_H_
+#ifndef AOFSM_SRC_TRANSITION_MAP_H_
+#define AOFSM_SRC_TRANSITION_MAP_H_
 
 #include <cstddef>
 
@@ -12,24 +12,28 @@ namespace aofsm {
 
 using std::size_t;
 
-// Die Klasse StateMachine erlaubt es einem Client-Class die eigenen Methoden
-// Zustands- und Erreignis-abhängig aufzurufen.
+// Die Klasse TransitionMap erlaubt es einem Client-Class aus einer Menge von
+// erlaubten Statemachine-Transitionen {SrcState,  Event, DstState, Action}
+// einen Map zu erzeugen:
 //
-// Die Events und Zustände müssem als Enums definiert sein.
+//    {SrcState,Event} => {DstState,Action}
 //
-// Die Transition können als einen einfachen Array zusammengefasst werden und
-// müssen an Konstruktor von StateMachine übergeben werden.
+// Die Events und Zustände müssen im Client-Class als Enums definiert sein.
+//
+// Die Transitionen können als einen einfachen Array, TransitionArray,
+// zusammengefasst und an Konstruktor von TransitionMap übergeben
+// werden.
 //
 // Beispiel:
 //
 //  Statemachine
-//  - zwei Zustände: StateA(Initial), StateB
+//  - zwei Zustände: StateA, StateB
 //  - ein Ereignis: EventAction.
 //  - zwei Transitionen:
 //    -  StateA EventAction/DoA -> StateA
 //    -  StateB EventAction/DoB -> StateB
 //
-//  Notwendige Konfiguration der StateMachine:
+//  Notwendige Konfiguration der TransitionArray:
 //
 //  - States und Events als nested Enum in Client-Class:
 //      -  enum State { kStateA, kStateB, kStateCount, INITIAL_STATE = kStateA};
@@ -42,9 +46,10 @@ using std::size_t;
 //
 //  Benutzung:
 //
-//  - StateMachine muss mit dem Client-Class als Template-Parameter instantiiert
+//  - TransitionTable muss mit dem Client-Class als Template-Parameter
+//  instantiiert
 //    werde,
-//  - die StateMachine-Instanz kann ein Member von Client-Class sein
+//  - die TransitionTable-Instanz kann ein Member von Client-Class sein
 //
 //  - an Konstruktor wird this-Pointer und Array mit Transitionen übergeben
 //
@@ -52,7 +57,7 @@ using std::size_t;
 //    normaleweise über Transitionen von State-Machine.
 //
 //  - Wenn das Client-Class die Methode Trigger(kEventAction) von
-//    StateMachine-Istanz aufruft, wird zustandabhängig DoA oder DoB von
+//    TransitionTable-Istanz aufruft, wird zustandabhängig DoA oder DoB von
 //    Client-Class aufgerufen.
 //
 // Allgemeine Beschreibung der Schnittstellle:
@@ -62,7 +67,7 @@ using std::size_t;
 //  - Anzahl der Zustände ( kStateCount in enum State von Client-Class)
 //  - Anzahl der Events (kEventCount in enum Event von Client-Class)
 //  - Initialzustand (INITIAL_STATE in enum State von Client-Class)
-//  - Transitionen (Array von StateMachine<>::Transition)
+//  - Transitionen (Array von TransitionTable<>::Transition)
 //
 // Template-Parameter:
 //  - Client_t - Client-Class
@@ -101,17 +106,16 @@ using std::size_t;
 //         Anzahl an Aktionen pro Transition.
 //
 // Instantiierung: mit ...
-//             - Zeiger auf Client-Class-Instanz
-//             - Tabelle mit Transitionen
+//             - TransitionArray
 //
-// Tabelle mit Transitionen:
-//   - Ganze Tabelle in {} - Klammern
+// TransitionArray:
+//   - Ganz in {} - Klammern
 //
 //   - Jeder Eintrag in {} - Klammern
 //
 //   - Einträge mit ',' getrennt
 //
-// Eintragsarten in der Tabelle mit Transitionen:
+// Eintragsarten in TransitionArray:
 //
 //   - Default-Action für Event
 //
@@ -175,30 +179,12 @@ using std::size_t;
 //       Zustand
 //
 //
-template <typename Client_t, typename State_t = typename Client_t::State,
-          typename Event_t = typename Client_t::Event,
-          size_t MAX_ACTIONS_PER_TRANSITION = 2,
-          typename... ActionParameterTypes>
-class StateMachine {
+template <typename State_t, typename Event_t, typename ArrayOfActions_t,
+          typename Guard_t>
+class TransitionMap {
  public:
-  // Pointer auf Member-Methode des Clients, welche bei einer Transition als
-  // Action aufgerufen wird.
-  using Action_t = void (Client_t::*)(ActionParameterTypes...);
-
-  // Pointer auf Member-Methode des Clients, welche bei einer Guarded-Transition
-  // als Guard dient.
-  // Der Rückgabewert von Guard bestimmt, welche von zwei möglichen Transitionen
-  // stattfinden soll.
-  // Bei true wird 1. Transition ausgeführt, bei false die 2.
-  using Guard_t = bool (Client_t::*)(ActionParameterTypes...) const;
-
   // Konstante für ungültier StateId
   static constexpr State_t kInvalidStateId = State_t::kStateCount;
-
-  // Fasst Zeiger auf mehrere Member-Methoden des Clients, welche bei einer
-  // Transition aufgerufen werden.
-  using ArrayOfActions_t =
-      internal::ArrayOfActions<MAX_ACTIONS_PER_TRANSITION, Action_t>;
 
   // Konfigurationselement für Transitionen
   // Wird benutzt um die Transitionen von State-Machine zu parametrieren.
@@ -237,25 +223,22 @@ class StateMachine {
   template <size_t N>
   using StateInfoArray = StateInfo[N];
 
-  // Konstruktor: Initialisierung der State-Machine nur mit der
+  // Konstruktor: Initialisierung der TransitionMap-Instanz nur mit der
   // Transition-Konfiguration
   template <size_t TRANSITION_COUNT>
-  StateMachine(Client_t* client,
-               const TransitionArray<TRANSITION_COUNT>& transitions);
+  explicit TransitionMap(const TransitionArray<TRANSITION_COUNT>& transitions);
 
   // Konstruktor: Initialisierung der State-Machine mit der
   // Transition-Konfiguration und State-Konfiguration
   template <size_t TRANSITION_COUNT, size_t STATE_INFO_COUNT>
-  StateMachine(Client_t* client,
-               const TransitionArray<TRANSITION_COUNT>& transitions,
-               const StateInfoArray<STATE_INFO_COUNT>& state_infos);
+  TransitionMap(const TransitionArray<TRANSITION_COUNT>& transitions,
+                const StateInfoArray<STATE_INFO_COUNT>& state_infos);
 
-  virtual ~StateMachine() = default;
+  virtual ~TransitionMap() = default;
 
   void Trigger(Event_t event, ActionParameterTypes... params);
 
   void SetCurrentState(State_t state);
-
 
  private:
   void SetupTransitions(const Transition_t* transitions,
@@ -307,8 +290,6 @@ class StateMachine {
     EventTransition event_transitions[Event_t::kEventCount];
   };
 
-
-
   Client_t* client_{nullptr};
 
   State_t current_state_{State_t::INITIAL_STATE};
@@ -318,7 +299,7 @@ class StateMachine {
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<
+void TransitionMap<
     Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
     ActionParameterTypes...>::Trigger(Event_t event,
                                       ActionParameterTypes... params) {
@@ -347,18 +328,18 @@ void StateMachine<
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::SetCurrentState(State_t state) {
+void TransitionMap<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                   ActionParameterTypes...>::SetCurrentState(State_t state) {
   current_state_ = state;
 }
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 template <size_t TRANSITION_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-             ActionParameterTypes...>::
-    StateMachine(Client_t* client,
-                 const TransitionArray<TRANSITION_COUNT>& transitions)
+TransitionMap<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+              ActionParameterTypes...>::
+    TransitionMap(Client_t* client,
+                  const TransitionArray<TRANSITION_COUNT>& transitions)
     : client_{client} {
   SetupTransitions(transitions, TRANSITION_COUNT);
 }
@@ -366,11 +347,11 @@ StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 template <size_t TRANSITION_COUNT, size_t STATE_INFO_COUNT>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-             ActionParameterTypes...>::
-    StateMachine(Client_t* client,
-                 const TransitionArray<TRANSITION_COUNT>& transitions,
-                 const StateInfoArray<STATE_INFO_COUNT>& state_infos)
+TransitionMap<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+              ActionParameterTypes...>::
+    TransitionMap(Client_t* client,
+                  const TransitionArray<TRANSITION_COUNT>& transitions,
+                  const StateInfoArray<STATE_INFO_COUNT>& state_infos)
     : client_{client} {
   SetupTransitions(transitions, TRANSITION_COUNT);
   SetupStates(state_infos, STATE_INFO_COUNT);
@@ -378,7 +359,7 @@ StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<
+void TransitionMap<
     Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
     ActionParameterTypes...>::SetupTransitions(const Transition_t* transitions,
                                                size_t transition_count) {
@@ -403,7 +384,7 @@ void StateMachine<
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<
+void TransitionMap<
     Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
     ActionParameterTypes...>::SetupStates(const StateInfo* state_infos,
                                           size_t state_info_count) {
@@ -419,8 +400,8 @@ void StateMachine<
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::
+void TransitionMap<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                   ActionParameterTypes...>::
     SetupDefaultAction(const Transition_t& transition) {
   auto event = transition.event;
 
@@ -431,25 +412,25 @@ void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::
+void TransitionMap<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                   ActionParameterTypes...>::
     SetupDefaultTransition(const Transition_t& transition) {}
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::SetupTransition(const Transition_t&
-                                                                transition) {}
+void TransitionMap<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                   ActionParameterTypes...>::SetupTransition(const Transition_t&
+                                                                 transition) {}
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::
+void TransitionMap<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+                   ActionParameterTypes...>::
     SetupConditionalTransition(const Transition_t& transition) {}
 
 template <typename Client_t, typename State_t, typename Event_t,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<
+void TransitionMap<
     Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
     ActionParameterTypes...>::SetupSubStates(State_t state,
                                              const State_t* substates,
@@ -457,4 +438,4 @@ void StateMachine<
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_STATE_MACHINE_H_
+#endif  // AOFSM_SRC_TRANSITION_MAP_H_
