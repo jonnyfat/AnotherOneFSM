@@ -11,35 +11,61 @@ using std::size_t;
 template <typename Value, Value value>
 class ValueHolder {
  public:
-  static Value Get() { return value; }
+  static constexpr Value Get() { return value; }
 };
 
-template <typename Client_t, typename State_t = typename Client_t::State,
-          typename Event_t = typename Client_t::Event,
+template <typename StateMachine_t, typename StateMachine_t::State_t src_state,
+          typename StateMachine_t::Event_t event>
+struct TransitionKey {
+  using SrcState_t = ValueHolder<typename StateMachine_t::State_t, src_state>;
+  using Event_t = ValueHolder<typename StateMachine_t::Event_t, event>;
+};
+
+template <typename StateMachine_t, typename StateMachine_t::State_t src_state,
+          typename StateMachine_t::Event_t event>
+class TransitionData {
+ public:
+  // Invalid StateId
+  using DestState_t = ValueHolder<typename StateMachine_t::State_t,
+                                  StateMachine_t::kInvalidStateId>;
+  // Invalid Action
+  using Action_t = ValueHolder<typename StateMachine_t::Action_t, nullptr>;
+};
+
+template <typename Client, typename State = typename Client::State,
+          typename Event = typename Client::Event,
           typename... ActionParameterTypes>
 class StateMachine {
  public:
+  using Client_t = Client;
+  using State_t = State;
+  using Event_t = Event;
   // Pointer auf Member-Methode des Clients, welche bei einer Transition als
   // Action aufgerufen wird.
-  using Action_t = void (Client_t::*)(ActionParameterTypes...);
+  using Action_t = void (Client::*)(ActionParameterTypes...);
 
-  template <State_t state, Event_t event>
-  class Transition {
-    using DestState_t = ValueHolder<State_t, State_t::kStateCount>;
-    using Action_t = ValueHolder<Action_t, nullptr>;
-  };
+  // Konstante für ungültiger StateId
+  static constexpr State_t kInvalidStateId = State_t::kStateCount;
 
-  struct TransitionInfo {
-    State_t dest_state;
-    Action_t action;
-  };
-
-  TransitionInfo GetTransitionInfo() {}
+  // Konstante für Anzahl der Events
+  static constexpr size_t kEventCount = Event_t::kStateCount;
 };
 
-template <typename Transition, typename State_t, State_t state,
-          typename Event_t>
-class StateEvents {};
+// primary template
+template <typename StateMachine, typename StateMachine::State_t state,
+          size_t event_count = StateMachine::kEventCount>
+struct StateEvents : public StateEvents<StateMachine, state, event_count - 1> {
+  using Base_t = StateEvents<StateMachine, state, event_count - 1>;
+  using State_t = typename StateMachine::State_t;
+  using Event_t = typename StateMachine::Event_t;
+
+  using EventTypeValue_t =
+      ValueHolder<Event_t, static_cast<Event_t>(StateMachine::kEventCount -
+                                                event_count)>;
+};
+
+template <typename StateMachine, typename StateMachine::State_t state>
+struct StateEvents<StateMachine, state, static_cast<size_t>(0)> {};
 
 // state machine
 // clang-format off
@@ -97,10 +123,9 @@ class Client1 {
 };
 
 template <>
-template <>
-class StateMachine<Client1>::Transition<Client1::INITIAL_STATE,
-                                        Client1::kStartAEvt> {
-  using DestState_t = ValueHolder<Client1::State, Client1::INITIAL_STATE>;
+class TransitionData<Client1::StateMachine, Client1::INITIAL_STATE,
+                     Client1::kStartAEvt> {
+  using DestState_t = ValueHolder<Client1::State, Client1::A_STATE>;
   using Action_t = ValueHolder<Client1::Action_t, &Client1::DoStartA>;
 };
 
@@ -111,7 +136,7 @@ struct State {
 
 template <size_t state_index>
 struct StateIndex {
-  static constexpr size_t GetValue() { return state_index; }
+  static constexpr size_t GetIndex() { return state_index; }
 };
 
 TEST(aofsm_StateMachine, trigger) {
@@ -119,6 +144,9 @@ TEST(aofsm_StateMachine, trigger) {
 
   Client1::State state1 = State<Client1::INITIAL_STATE>::GetState();
   Client1::State state2 = State<static_cast<Client1::State>(0)>::GetState();
+  //  Client1::State state2 = State<0>::GetState();
 
-  size_t state_index1 = StateIndex<>;
+  size_t state_index1 =
+      StateIndex<static_cast<size_t>(Client1::INITIAL_STATE)>::GetIndex();
+  //  size_t state_index1 = StateIndex<Client1::INITIAL_STATE>::GetIndex();
 }

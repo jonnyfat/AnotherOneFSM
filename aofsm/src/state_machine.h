@@ -192,7 +192,7 @@ class StateMachine {
   // Bei true wird 1. Transition ausgeführt, bei false die 2.
   using Guard_t = bool (Client_t::*)(ActionParameterTypes...) const;
 
-  // Konstante für ungültier StateId
+  // Konstante für ungültiger StateId
   static constexpr State_t kInvalidStateId = State_t::kStateCount;
 
   // Fasst Zeiger auf mehrere Member-Methoden des Clients, welche bei einer
@@ -256,7 +256,6 @@ class StateMachine {
 
   void SetCurrentState(State_t state);
 
-
  private:
   void SetupTransitions(const Transition_t* transitions,
                         size_t transition_count);
@@ -306,8 +305,6 @@ class StateMachine {
 
     EventTransition event_transitions[Event_t::kEventCount];
   };
-
-
 
   Client_t* client_{nullptr};
 
