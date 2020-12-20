@@ -8,10 +8,10 @@ using std::size_t;
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-template <typename Value, Value value>
+template <typename Value, Value VALUE>
 class ValueHolder {
  public:
-  static constexpr Value Get() { return value; }
+  static constexpr Value value = VALUE;
 };
 
 template <typename StateMachine_t, typename StateMachine_t::State_t src_state,
@@ -53,19 +53,21 @@ class StateMachine {
 
 // primary template
 template <typename StateMachine, typename StateMachine::State_t state,
-          size_t event_count = StateMachine::kEventCount>
-struct StateEvents : public StateEvents<StateMachine, state, event_count - 1> {
-  using Base_t = StateEvents<StateMachine, state, event_count - 1>;
+          size_t event_index = StateMachine::kEventCount - 1>
+struct StateEvents : public StateEvents<StateMachine, state, event_index - 1> {
+  using Base_t = StateEvents<StateMachine, state, event_index - 1>;
   using State_t = typename StateMachine::State_t;
   using Event_t = typename StateMachine::Event_t;
 
   using EventTypeValue_t =
-      ValueHolder<Event_t, static_cast<Event_t>(StateMachine::kEventCount -
-                                                event_count)>;
+      ValueHolder<Event_t, static_cast<Event_t>(event_index)>;
+
+  TransitionData<StateMachine, state, static_cast<Event_t>(event_index)>
+      transition_data;
 };
 
 template <typename StateMachine, typename StateMachine::State_t state>
-struct StateEvents<StateMachine, state, static_cast<size_t>(0)> {};
+struct StateEvents<StateMachine, state, static_cast<size_t>(-1)> {};
 
 // state machine
 // clang-format off
