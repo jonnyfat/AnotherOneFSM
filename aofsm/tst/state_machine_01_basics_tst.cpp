@@ -58,21 +58,19 @@ class SimlpeClient1 {
 
   friend class aofsm::StateMachine<SimlpeClient1>;
 
-  using StateMachine = aofsm::StateMachine<SimlpeClient1>;
-  using TransitionTable = aofsm::StateMachine<SimlpeClient1>::TransitionTable;
+  using StateMachine_t = aofsm::StateMachine<SimlpeClient1>;
+  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 
-  static const TransitionTable transitionTable;
+  static StateMachineDescription_t state_machine_description;
 
-  StateMachine state_machine{this,
-                             {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
-                              {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
-                              {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
-                              {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
+  StateMachine_t state_machine{this, state_machine_description};
 };
 
-SimlpeClient1::
+SimlpeClient1::StateMachineDescription_t
+    SimlpeClient1::state_machine_description{
+        {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
+         {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
+         {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
+         {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 
-    TEST(aofsm_StateMachine, trigger) {
-  SimlpeClient1 simple_client;
-  simple_client.StartA();
-}
+TEST(aofsm_StateMachine, trigger) { SimlpeClient1 simple_client; }

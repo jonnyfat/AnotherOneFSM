@@ -36,6 +36,17 @@ class ArrayOfActions {
 
   void SetEmpty() { action_count = 0; }
 
+  bool IsEmpty() const { return action_count == 0; }
+
+  void SetInvalid() {
+    action_count = 1;
+    action_array[0] = nullptr;
+  }
+
+  bool IsInvalid() const {
+    return action_count > 0 && action_array[0] == nullptr;
+  }
+
  private:
   size_t action_count{0};
   Action_t action_array[MAX_ACTIONS_PER_TRANSITION];

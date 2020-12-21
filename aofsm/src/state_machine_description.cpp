@@ -1,5 +1,5 @@
 // copyright Yevgen
 
-#include "aofsm/src/transition_map.h"
+#include "aofsm/src/state_machine_description.h"
 
 namespace aofsm {}  // namespace aofsm
