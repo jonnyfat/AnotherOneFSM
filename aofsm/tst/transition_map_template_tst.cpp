@@ -12,6 +12,7 @@ using std::size_t;
 template <typename Value, Value VALUE>
 struct ValueHolder {
   static constexpr Value value = VALUE;
+  static constexpr Value GetValue() { return VALUE; }
 };
 
 // Schlüssel für Suche einer Transitionen
@@ -39,7 +40,7 @@ struct TransitionData {
   Action transition_action;
 };
 
-// primary template
+// StateEvents primary template
 template <typename StateMachine, typename StateMachine::State_t state,
           size_t event_index = StateMachine::Event_t::kEventCount - 1>
 struct StateEvents : public StateEvents<StateMachine, state, event_index - 1> {
@@ -66,11 +67,26 @@ struct StateEvents : public StateEvents<StateMachine, state, event_index - 1> {
   }
 };
 
+// StateEvents secondary template
 template <typename StateMachine, typename StateMachine::State_t state>
 struct StateEvents<StateMachine, state, static_cast<size_t>(-1)> {
   static constexpr void GetState() {}
   static constexpr void GetAction() {}
 };
+
+// StateMachineStates primary template
+template <typename StateMachine,
+          size_t state_index = StateMachine::State_t::kStateCount - 1>
+struct StateMachineStates
+    : public StateMachineStates<StateMachine, state_index - 1> {
+  using State_t = typename StateMachine::State_t;
+  using StateEvents_t =
+      StateEvents<StateMachine, static_cast<State_t>(state_index)>;
+};
+
+// StateMachineStates secondary template
+template <typename StateMachine>
+struct StateMachineStates<StateMachine, static_cast<size_t>(-1)> {};
 
 template <typename Client, typename State = typename Client::State,
           typename Event = typename Client::Event,
