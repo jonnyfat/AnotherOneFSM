@@ -333,6 +333,15 @@ void StateMachineDescription<State_t, Event_t, Action_t,
                                                       const State_t* substates,
                                                       size_t substates_count) {}
 
+template <typename State_t, typename Event_t, typename Action_t,
+          typename Guard_t>
+const typename StateMachineDescription<State_t, Event_t, Action_t,
+                                       Guard_t>::EventTransition&
+StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::GetTransition(
+    State_t src_state, Event_t event) const {
+  return state_transitions_[src_state].event_transitions[event];
+}
+
 }  // namespace aofsm
 
 #endif  // AOFSM_SRC_STATE_MACHINE_DESCRIPTION_H_
