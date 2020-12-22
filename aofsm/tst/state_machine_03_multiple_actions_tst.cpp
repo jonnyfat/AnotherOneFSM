@@ -6,7 +6,7 @@
 
 using std::size_t;
 
-#include "aofsm/src/state_machine.h"
+#include "aofsm/src/state_machine_aliases.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -49,16 +49,22 @@ class SimlpeClient3 {
   void DoReset() {}
   void DoNop() {}
 
-  using ClientStateMachine_t = aofsm::StateMachine<SimlpeClient3>;
+  using StateMachine_t = aofsm::StateMachineWithCustomActions<SimlpeClient3, 2>;
 
-  ClientStateMachine_t state_machine_{
-      this,
-      {// Transitions
-       // {Src-State  Event   Dst-State Actions}
-       {INITIAL_STATE, kStartEvt, MIDDLE_STATE, {&DoStart, &DoTick}},
-       {MIDDLE_STATE, kEndEvt, FINAL_STATE, {&DoTick, &DoEnd}},
-       {FINAL_STATE, kResetEvt, INITIAL_STATE, &DoReset}}};
+  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
+
+  static const StateMachineDescription_t state_machine_description_;
+
+  StateMachine_t state_machine_{this, state_machine_description_};
 };
+
+const SimlpeClient3::StateMachineDescription_t
+    SimlpeClient3::state_machine_description_{
+        {// Transitions
+         // {Src-State  Event   Dst-State Actions}
+         {INITIAL_STATE, kStartEvt, MIDDLE_STATE, {&DoStart, &DoTick}},
+         {MIDDLE_STATE, kEndEvt, FINAL_STATE, {&DoTick, &DoEnd}},
+         {FINAL_STATE, kResetEvt, INITIAL_STATE, &DoReset}}};
 
 TEST(aofsm_StateMachineMultipleActions, instantiate) {
   SimlpeClient3 simple_client;

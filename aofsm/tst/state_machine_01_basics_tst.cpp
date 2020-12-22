@@ -41,11 +41,11 @@ using std::size_t;
 
 class SimlpeClient1 {
  public:
-  void StartA() { state_machine.Trigger(kStartAEvt); }
+  void StartA() { state_machine_.Trigger(kStartAEvt); }
 
-  void StartB() { state_machine.Trigger(kStartBEvt); }
+  void StartB() { state_machine_.Trigger(kStartBEvt); }
 
-  void End() { state_machine.Trigger(kEndEvt); }
+  void End() { state_machine_.Trigger(kEndEvt); }
 
  private:
   enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
@@ -62,13 +62,13 @@ class SimlpeClient1 {
 
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 
-  static StateMachineDescription_t state_machine_description;
+  static StateMachineDescription_t state_machine_description_;
 
-  StateMachine_t state_machine{this, state_machine_description};
+  StateMachine_t state_machine_{this, state_machine_description_};
 };
 
 SimlpeClient1::StateMachineDescription_t
-    SimlpeClient1::state_machine_description{
+    SimlpeClient1::state_machine_description_{
         {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
          {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
          {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},

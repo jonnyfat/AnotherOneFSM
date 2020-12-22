@@ -49,9 +49,9 @@ class SimlpeClient2 {
     char* data{nullptr};
   };
 
-  void StartA(Data* data) { state_machine.Trigger(kStartAEvt, data); }
-  void StartB(Data* data) { state_machine.Trigger(kStartBEvt, data); }
-  void End() { state_machine.Trigger(kEndEvt, nullptr); }
+  void StartA(Data* data) { state_machine_.Trigger(kStartAEvt, data); }
+  void StartB(Data* data) { state_machine_.Trigger(kStartBEvt, data); }
+  void End() { state_machine_.Trigger(kEndEvt, nullptr); }
 
  private:
   void DoStartA(Data*) {}
@@ -64,13 +64,13 @@ class SimlpeClient2 {
 
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 
-  static const StateMachineDescription_t state_machine_description;
+  static const StateMachineDescription_t state_machine_description_;
 
-  StateMachine_t state_machine{this, state_machine_description};
+  StateMachine_t state_machine_{this, state_machine_description_};
 };
 
 const SimlpeClient2::StateMachineDescription_t
-    SimlpeClient2::state_machine_description{
+    SimlpeClient2::state_machine_description_{
         {// Transitions
          // {Source-State Event Destination-State Actions}
          {INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},

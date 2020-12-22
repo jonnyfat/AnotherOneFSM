@@ -85,7 +85,7 @@ using std::size_t;
 //
 template <typename Client_t, typename State_t = typename Client_t::State,
           typename Event_t = typename Client_t::Event,
-          size_t MAX_ACTIONS_PER_TRANSITION = 2,
+          size_t MAX_ACTIONS_PER_TRANSITION = 1,
           typename... ActionParameterTypes>
 class StateMachine {
  public:
