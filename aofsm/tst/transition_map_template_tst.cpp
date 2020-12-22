@@ -100,9 +100,10 @@ struct StateMachineStates
 template <typename StateMachine>
 struct StateMachineStates<StateMachine, static_cast<size_t>(-1)> {};
 
-template <typename State, typename Event, typename Action>
+template <typename Client, typename State, typename Event, typename Action>
 class StateMachineDescription {
  public:
+  using Client_t = Client;
   using State_t = State;
   using Event_t = Event;
   using Action_t = Action;
@@ -112,9 +113,15 @@ class StateMachineDescription {
 
   using TransitionData_t = TransitionData<State_t, Action_t>;
 
+  struct StateTransitionData {
+    TransitionData_t event_transitions[Event::kEventCount];
+  };
+
   static constexpr bool IsValidState(State_t state) {
     return state >= 0 && state < State_t::kStateCount;
   }
+
+  StateTransitionData transitions[State::kStateCount];
 };
 
 template <typename Client, typename State = typename Client::State,
@@ -130,7 +137,7 @@ class StateMachine {
   using Action_t = void (Client::*)(ActionParameterTypes...);
 
   using StateMachineDescription_t =
-      StateMachineDescription<State_t, Event_t, Action_t>;
+      StateMachineDescription<Client_t, State_t, Event_t, Action_t>;
 
   static constexpr bool IsValidState(State_t state) {
     return StateMachineDescription_t::IsValidState(state);
@@ -199,14 +206,20 @@ class Client1 {
                             STATE_MACHINE::Event_t::EVENT> {                  \
     using DestState_t = ValueHolder<STATE_MACHINE::State_t,                   \
                                     STATE_MACHINE::State_t::DST_STATE>;       \
-    using Action_t = ValueHolder<STATE_MACHINE ::Action_t, &ACTION>;          \
+    using Action_t = ValueHolder<STATE_MACHINE ::Action_t,                    \
+                                 &STATE_MACHINE::Client_t::ACTION>;           \
   };
 
+// template <typename Client>
+// struct StateMachineDescriptionDef {};
+//
+// DECL_STATE_MACHINE_DESCRIPTION(Client1, Client1Fsm)
+
 DEF_TRANS(Client1::StateMachineDescription_t, INITIAL_STATE, kStartAEvt,
-          A_STATE, Client1::DoStartA)
+          A_STATE, DoStartA)
 
 DEF_TRANS(Client1::StateMachineDescription_t, INITIAL_STATE, kStartBEvt,
-          B_STATE, Client1::DoStartB)
+          B_STATE, DoStartB)
 
 TEST(aofsm_StateMachine, StateEventsInstantiation) {
   StateEvents<Client1::StateMachineDescription_t, Client1::INITIAL_STATE>
