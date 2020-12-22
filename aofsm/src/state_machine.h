@@ -18,98 +18,70 @@ using std::size_t;
 //
 // Die Events und Zustände müssem als Enums definiert sein.
 //
-// Die Transition müssem als eine StateMachineDescription-Instanz an Konstruktor
+// Die Transition müssen als eine StateMachineDescription-Instanz an Konstruktor
 // von StateMachine übergeben werden.
-//
-// Beispiel:
-//
-//  Statemachine
-//  - zwei Zustände: StateA(Initial), StateB
-//  - ein Ereignis: EventAction.
-//  - zwei Transitionen:
-//    -  StateA EventAction/DoA -> StateA
-//    -  StateB EventAction/DoB -> StateB
-//
-//  Notwendige Konfiguration der StateMachine:
-//
-//  - States und Events als nested Enum in Client-Class:
-//      -  enum State { kStateA, kStateB, kStateCount, INITIAL_STATE = kStateA};
-//      -  enum Event { kEventAction , kEventCount };
-//
-//  - Transitionen werden als einen Array definiert.
-//
-//     {{kStateA, kEventAction, kStateA, &Client::DoA},
-//      {kStateB, kEventAction, kStateB, &Client::DoB}}
 //
 //  Benutzung:
 //
+//  - Definieren von Client-StateMachine-Alias aus StateMachine-Template.
+//    Der StateMachine-Template muss im einfachsten Fall nur mit Client-Class
+//    als Template-Parameter definiert werden, wobei bei Client-Class
+//    folgende Voraussetzungen erfüllt werden müssen:
 //
-//  - StateMachine-Class muss aus StateMachine-Template mit Client-Class und
-//    weiteren parameter instantiiert werden.
+//     - Der Client-Class muss zwei nested enum-Deklatarionen haben:
 //
-//  - StateMachineDescription ( StateMachine-Class::StateMachineDescription_t )
-//    muss instantiiert werden (normaleweise als static const)
+//       - enum State mit Elementen INITIAL_STATE, kStateCount und
+//          State-Konstanten, welche für Parametrierung von
+//          StateMachineDescription verwendet werden.
+//           Beispiel: enum State { .... , kStateCount, INITIAL_STATE = ...};
+//           kStateCount - Anzahl der Zustände
+//           INITIAL_STATE - Initiale Zustand bei Instanziiierung
+//           State-Konstanten, eine Konstante pro Zustand mit belibigen Namen
+//         Werte von State-Konstanten müssen im Bereich [0:kStateCount) liegen
+//           und eindeutig sein
 //
-//  - an Konstruktor von StateMachineDescription muss Array mit Transitionen
-//    übergeben
+//       - enum Event mit Element kEventCount haben
+//          Beispiel: enum Event { .... , kEventCount };
+//           kEventCount - Anzahl der Events
+//         Werte von Event-Konstanten müssen im Beriech [0:kEventCount) liegen
+//           und eindeutig sein
 //
-//  - StateMachine muss instantiiert werden (ein Member von Client-Class)
+//  - StateMachineDescription muss als static const Member von Client-Class
+//    instantiiert werden.
+//    Instanz-Typ: Client-StateMachine-Alias::StateMachineDescription_t.
 //
-//  - an Konstruktor von StateMachine muss die Instanz von Client-Class und von
-//    StateMachineDescription übergeben werden.
+//  - StateMachine muss als Member von Client-Class instantiiert werden,
+//    Instanz-Typ: Client-StateMachine-Alias.
+//    - Konstruktorparamer:
+//        - Pointer auf Client-Class
+//        - Referenz auf StateMachineDescription.
 //
-//  - Wenn das Client-Class die Methode Trigger(kEventAction) von
-//    StateMachine-Istanz aufruft, wird zustandabhängig DoA oder DoB von
-//    Client-Class aufgerufen.
+//  - Mit der Methode Trigger() können die Zustandsübergänge der State-Machine
+//    getriggert werden. Sie werden entsprechend der Konfiguration von
+//    StateMachineDescription ausgeführt.
 //
 // Allgemeine Beschreibung der Schnittstellle:
 //
 //  Die State-Machine-Implementierung benötigt von Client folgende
 //  Informationen:
-//  - Anzahl der Zustände ( kStateCount in enum State von Client-Class)
+//  -
 //  - Anzahl der Events (kEventCount in enum Event von Client-Class)
 //  - Initialzustand (INITIAL_STATE in enum State von Client-Class)
 //  - Transitionen (StateMachineDescription)
 //
 // Template-Parameter:
 //  - Client_t - Client-Class
-//  - State_t - Clients Enumeration für Zustände;
-//  - Event_T - Clients Enumeration für Events
+//  - State_t - Enumeration für Zustände.
+//      - State_t  muss Anzahl der Zustände als enum-Element kStateCount
+//        enthalten.
+//      - State_t  muss Id von Initalzustand als enum-Element INITIAL_STATE
+//        enthalten.
+//  - Event_t - Enumeration für Events.
+//      - Event_t muss Anzahl der Events als enum-Element kEventCount
+//        enthalten.
 //  - MAX_ACTIONS_PER_TRANSITION - Maximale Anzahl von Actions pro Transition
 //  - ActionParameterTypes - template parameter pack :  Signatur von
-//    Action-Methoden. Wenn z.B. leer dann sind Action-Methoden void(void)
-//
-// Anforderungen Template-Parameter:
-//
-//  - Enum State_t muss Elemente INITIAL_STATE und kStateCount haben:
-//    - enum State { .... , kStateCount, INITIAL_STATE = ...};
-//    - kStateCount Anzahl der Zustände
-//    - INITIAL_STATE - Initiale Zustand bei Instanziiierung
-//    - Mehrere State-Konstanten, eine Konstante pro Zustand mit belibigen Namen
-//
-//    - Werte von State-Konstanten müssen
-//      - im Beriech [0:kStateCount) liegen
-//      - eindeutig sein
-//
-//  - Enum Event_t muss Element kEventCount haben
-//    -  enum Event { .... , kEventCount };
-//    -  kEventCount - Anzahl der Events
-//
-//    -  Werte von Event-Konstanten müssen
-//      - im Beriech [0:kEventCount) liegen
-//      - eindeutig sein
-//
-// Verwendung:
-//
-// Parametrierung: mit Client-Class und bei Bedarf mit anderen
-//                 Template-Parameter parametrieren.
-//
-// Template-Parameter MAX_ACTIONS_PER_TRANSITION begrenzt maximale
-//         Anzahl an Aktionen pro Transition.
-//
-// Instantiierung: mit ...
-//             - Zeiger auf Client-Class-Instanz
-//             - StateMachineDescription
+//    Action-Methoden. Wenn leer dann sind Action-Methoden void(void)
 //
 template <typename Client_t, typename State_t = typename Client_t::State,
           typename Event_t = typename Client_t::Event,

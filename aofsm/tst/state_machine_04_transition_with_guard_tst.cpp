@@ -6,7 +6,7 @@
 
 using std::size_t;
 
-#include "aofsm/src/state_machine_simple.h"
+#include "../src/state_machine_aliases.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

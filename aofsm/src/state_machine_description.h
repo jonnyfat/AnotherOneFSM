@@ -20,93 +20,48 @@ using std::size_t;
 //
 // Die Events und Zustände müssen im Client-Class als Enums definiert sein.
 //
-// Die Transitionen können als einen einfachen Array, TransitionArray,
-// zusammengefasst und an Konstruktor von TransitionMap übergeben
-// werden.
+// Die Statemachine-Transitionen können als TransitionArray als
+// Kosntruktor-Parameter übergeben werden.
 //
 // Beispiel:
 //
-//  Statemachine
-//  - zwei Zustände: StateA, StateB
-//  - ein Ereignis: EventAction.
+//  Für folgende Statemachine
+//  - zwei States: StateA, StateB
+//  - ein Event: EventAction.
+//  - zwei Actions: DoA DoB
 //  - zwei Transitionen:
 //    -  StateA EventAction/DoA -> StateA
 //    -  StateB EventAction/DoB -> StateB
 //
-//  Notwendige Konfiguration der TransitionArray:
+//  muss der Clien-Class
 //
-//  - States und Events als nested Enum in Client-Class:
-//      -  enum State { kStateA, kStateB, kStateCount, INITIAL_STATE = kStateA};
+//  - zwei nested Enums haben: :
+//      -  enum State { kStateA, kStateB, kStateCount};
 //      -  enum Event { kEventAction , kEventCount };
 //
-//  - Transitionen werden als einen Array definiert.
+//  - statisch StateMachineDescription instanziiern mit folgendem
+//    TransitionArray als Konstruktor-Parameter :
 //
 //     {{kStateA, kEventAction, kStateA, &Client::DoA},
 //      {kStateB, kEventAction, kStateB, &Client::DoB}}
 //
-//  Benutzung:
-//
-//  - TransitionTable muss mit dem Client-Class als Template-Parameter
-//  instantiiert
-//    werde,
-//  - die TransitionTable-Instanz kann ein Member von Client-Class sein
-//
-//  - an Konstruktor wird this-Pointer und Array mit Transitionen übergeben
-//
-//  - In diesem Beispiel kann der Zustand per SetCurrentState() gesetzt werden,
-//    normaleweise über Transitionen von State-Machine.
-//
-//  - Wenn das Client-Class die Methode Trigger(kEventAction) von
-//    TransitionTable-Istanz aufruft, wird zustandabhängig DoA oder DoB von
-//    Client-Class aufgerufen.
-//
 // Allgemeine Beschreibung der Schnittstellle:
 //
-//  Die State-Machine ist ein Variadic Template und muss mit folgenden
-//  Parametern parametriert werden:
-//  - Anzahl der Zustände ( kStateCount in enum State von Client-Class)
-//  - Anzahl der Events (kEventCount in enum Event von Client-Class)
-//  - Initialzustand (INITIAL_STATE in enum State von Client-Class)
-//  - Transitionen (Array von TransitionTable<>::Transition)
+//  Die StateMachineDescription ist ein Template mit folgenden Parametern:
+//  - State_t : Datentyp für State-Id, muss enum sein und folgende Konstante
+//              kStateCount haben
+//              kStateCount - Anzahl der Zustände
+//  - Event_t : Datentyp für Event, muss enum sein und folgende Konstante
+//              kEvent haben
+//              kEvent - Anzahl der Events
+//  - Action_t, Guard_t : Datentypen welche für jede Transition {SrcState,Event}
+//                        gespeichert werden.  Müssen kopierbar sein.
 //
-// Template-Parameter:
-//  - Client_t - Client-Class
-//  - State_t - Clients Enumeration für Zustände;
-//  - Event_T - Clients Enumeration für Events
-//  - MAX_ACTIONS_PER_TRANSITION - Maximale Anzahl von Actions pro Transition
-//  - ActionParameterTypes - template parameter pack :  Signatur von
-//    Action-Methoden. Wenn z.B. leer dann sind Action-Methoden void(void)
+// Parametrierung:
 //
-// Anforderungen Template-Parameter:
-//
-//  - Enum State_t muss Elemente INITIAL_STATE und kStateCount haben:
-//    - enum State { .... , kStateCount, INITIAL_STATE = ...};
-//    - kStateCount Anzahl der Zustände
-//    - INITIAL_STATE - Initiale Zustand bei Instanziiierung
-//    - Mehrere State-Konstanten, eine Konstante pro Zustand mit belibigen Namen
-//
-//    - Werte von State-Konstanten müssen
-//      - im Beriech [0:kStateCount) liegen
-//      - eindeutig sein
-//
-//  - Enum Event_t muss Element kEventCount haben
-//    -  enum Event { .... , kEventCount };
-//    -  kEventCount - Anzahl der Events
-//
-//    -  Werte von Event-Konstanten müssen
-//      - im Beriech [0:kEventCount) liegen
-//      - eindeutig sein
-//
-// Verwendung:
-//
-// Parametrierung: mit Client-Class und bei Bedarf mit anderen
-//                 Template-Parameter parametrieren.
-//
-// Template-Parameter MAX_ACTIONS_PER_TRANSITION begrenzt maximale
-//         Anzahl an Aktionen pro Transition.
-//
-// Instantiierung: mit ...
-//             - TransitionArray
+// Bei Instanziierung muss ein TransitionArray als Konstruktor-Parameter
+// übergeben werden. Es ist nur für und während der Instantiierung notwendig,
+// danach wird es nicht mehr benötigt.
 //
 // TransitionArray:
 //   - Ganz in {} - Klammern
@@ -192,6 +147,7 @@ class StateMachineDescription {
   using Transition_t =
       Transition<State_t, Event_t, Guard_t, Action_t, kInvalidStateId>;
 
+  // Daten-Struktur für Interne-Speicherung für jedes {Source-State,Event}-Paar.
   struct EventTransition {
     Guard_t guard_action;  ///< Bestimmt ob trans1 oder Trans2 ausgeführt wird
                            ///< trans1 : Transition, wenn guard_action nullptr
