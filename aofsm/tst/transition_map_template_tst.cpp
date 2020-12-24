@@ -9,9 +9,10 @@ using std::size_t;
 #include "gtest/gtest.h"
 
 // ValueHolder macht aus einem Wert einen Datentyp
-template <typename Value, Value VALUE>
+template <typename ValueType, ValueType VALUE>
 struct ValueHolder {
-  static constexpr Value value = VALUE;
+  using ValueType_t = ValueType;
+  static constexpr ValueType value = VALUE;
 };
 
 // ValueHolder macht aus einem Wert einen Datentyp
@@ -19,6 +20,9 @@ template <typename State_t>
 struct InvalidState {
   static constexpr State_t value = State_t::kStateCount;
 };
+
+template <typename State_t>
+constexpr State_t InvalidState<State_t>::value;
 
 // Schlüssel für Suche einer Transitionen
 template <typename StateMachineDescription_t,
@@ -49,7 +53,11 @@ struct TransitionMapEntry {
 template <typename State, typename Action>
 struct TransitionData {
   State dest_state;
-  Action transition_action;
+  Action action;
+  bool IsInvalidState() const {
+    return dest_state == InvalidState<State>::value;
+  }
+  bool IsValidState() const { return !IsInvalidState(); }
 };
 
 // StateEvents primary template
@@ -68,22 +76,19 @@ struct StateEvents : public StateEvents<StateMachine, state, event_index - 1> {
       TransitionMapEntry<StateMachine, state,
                          static_cast<Event_t>(event_index)>;
 
-  using Base_t::GetAction;
-  using Base_t::GetState;
+  using Base_t::GetTransitionData;
 
-  static constexpr State_t GetState(const TransitionKey_t&) {
-    return TransitionMapEntry_t::DestState_t::value;
-  }
-  static constexpr Action_t GetAction(const TransitionKey_t&) {
-    return TransitionMapEntry_t::Action_t::value;
+  static constexpr TransitionData<State_t, Action_t> GetTransitionData(
+      const TransitionKey_t&) {
+    return {TransitionMapEntry_t::DestState_t::value,
+            TransitionMapEntry_t::Action_t::value};
   }
 };
 
 // StateEvents secondary template
 template <typename StateMachine, typename StateMachine::State_t state>
 struct StateEvents<StateMachine, state, static_cast<size_t>(-1)> {
-  static constexpr void GetState() {}
-  static constexpr void GetAction() {}
+  static constexpr void GetTransitionData() {}
 };
 
 // StateMachineStates primary template
@@ -116,10 +121,6 @@ class StateMachineDescription {
   struct StateTransitionData {
     TransitionData_t event_transitions[Event::kEventCount];
   };
-
-  static constexpr bool IsValidState(State_t state) {
-    return state >= 0 && state < State_t::kStateCount;
-  }
 
   StateTransitionData transitions[State::kStateCount];
 };
@@ -225,35 +226,28 @@ TEST(aofsm_StateMachine, StateEventsInstantiation) {
   StateEvents<Client1::StateMachineDescription_t, Client1::INITIAL_STATE>
       state_events;
 
-  auto state1 =
-      state_events.GetState(Client1::StateMachineDescription_t::TransitionKey_t<
-                            Client1::INITIAL_STATE, Client1::kStartAEvt>());
-  auto action1 = state_events.GetAction(
+  auto transition_data1 = state_events.GetTransitionData(
       Client1::StateMachineDescription_t::TransitionKey_t<
           Client1::INITIAL_STATE, Client1::kStartAEvt>());
 
-  EXPECT_TRUE(Client1::StateMachineDescription_t::IsValidState(state1));
-  EXPECT_EQ(state1, Client1::A_STATE);
-  EXPECT_EQ(action1, &Client1::DoStartA);
+  EXPECT_TRUE(transition_data1.IsValidState());
+  EXPECT_EQ(transition_data1.dest_state, Client1::A_STATE);
+  EXPECT_EQ(transition_data1.action, &Client1::DoStartA);
 
-  auto state2 =
-      state_events.GetState(Client1::StateMachineDescription_t::TransitionKey_t<
-                            Client1::INITIAL_STATE, Client1::kStartBEvt>());
-  auto action2 = state_events.GetAction(
+  auto transition_data2 = state_events.GetTransitionData(
       Client1::StateMachineDescription_t::TransitionKey_t<
           Client1::INITIAL_STATE, Client1::kStartBEvt>());
 
-  EXPECT_TRUE(Client1::StateMachineDescription_t::IsValidState(state2));
-  EXPECT_EQ(state2, Client1::B_STATE);
-  EXPECT_EQ(action2, &Client1::DoStartB);
+  EXPECT_TRUE(transition_data2.IsValidState());
+  EXPECT_EQ(transition_data2.dest_state, Client1::B_STATE);
+  EXPECT_EQ(transition_data2.action, &Client1::DoStartB);
 
-  auto state3 =
-      state_events.GetState(Client1::StateMachineDescription_t::TransitionKey_t<
-                            Client1::INITIAL_STATE, Client1::kEndEvt>());
-  auto action3 = state_events.GetAction(
+  auto transition_data3 = state_events.GetTransitionData(
       Client1::StateMachineDescription_t::TransitionKey_t<
           Client1::INITIAL_STATE, Client1::kEndEvt>());
 
-  EXPECT_FALSE(Client1::StateMachineDescription_t::IsValidState(state3));
-  EXPECT_EQ(action3, nullptr);
+  EXPECT_FALSE(transition_data3.IsValidState());
+  EXPECT_EQ(transition_data3.action, nullptr);
 }
+
+TEST(aofsm_StateMachine, Dummy) {}
