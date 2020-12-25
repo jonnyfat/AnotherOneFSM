@@ -25,29 +25,21 @@ template <typename State_t>
 constexpr State_t InvalidState<State_t>::value;
 
 // Schlüssel für Suche einer Transitionen
-template <typename StateMachineDescription_t,
-          typename StateMachineDescription_t::State_t src_state,
-          typename StateMachineDescription_t::Event_t event>
+template <typename State, typename Event, State src_state, Event event>
 struct TransitionKey {
-  using SrcState_t =
-      ValueHolder<typename StateMachineDescription_t::State_t, src_state>;
-  using Event_t =
-      ValueHolder<typename StateMachineDescription_t::Event_t, event>;
+  using SrcState_t = ValueHolder<State, src_state>;
+  using Event_t = ValueHolder<Event, event>;
 };
 
 // Daten einer Transitionen für ein Event in einem Zustand
-template <typename StateMachineDescription_t,
-          typename StateMachineDescription_t::State_t src_state,
-          typename StateMachineDescription_t::Event_t event>
+template <typename State, typename Event, typename Action, State src_state,
+          Event event>
 struct TransitionMapEntry {
-  using State_t = typename StateMachineDescription_t::State_t;
-
   // Invalid StateId
-  using DestState_t = ValueHolder<State_t, InvalidState<State_t>::value>;
+  using DestState_t = ValueHolder<State, InvalidState<State>::value>;
 
   // Invalid Action
-  using Action_t =
-      ValueHolder<typename StateMachineDescription_t::Action_t, nullptr>;
+  using Action_t = ValueHolder<Action, nullptr>;
 };
 
 template <typename State, typename Action>
@@ -61,19 +53,20 @@ struct TransitionData {
 };
 
 // StateEvents primary template
-template <typename StateMachine, typename StateMachine::State_t state,
-          size_t event_index = StateMachine::Event_t::kEventCount - 1>
-struct StateEvents : public StateEvents<StateMachine, state, event_index - 1> {
-  using Base_t = StateEvents<StateMachine, state, event_index - 1>;
-  using State_t = typename StateMachine::State_t;
-  using Event_t = typename StateMachine::Event_t;
-  using Action_t = typename StateMachine::Action_t;
+template <typename State, typename Event, typename Action, State state,
+          size_t event_index = Event::kEventCount - 1>
+struct StateEvents
+    : public StateEvents<State, Event, Action, state, event_index - 1> {
+  using Base_t = StateEvents<State, Event, Action, state, event_index - 1>;
+  using State_t = State;
+  using Event_t = Event;
+  using Action_t = Action;
 
   using TransitionKey_t =
-      TransitionKey<StateMachine, state, static_cast<Event_t>(event_index)>;
+      TransitionKey<State, Event, state, static_cast<Event_t>(event_index)>;
 
   using TransitionMapEntry_t =
-      TransitionMapEntry<StateMachine, state,
+      TransitionMapEntry<State, Event, Action, state,
                          static_cast<Event_t>(event_index)>;
 
   using Base_t::GetTransitionData;
@@ -86,43 +79,46 @@ struct StateEvents : public StateEvents<StateMachine, state, event_index - 1> {
 };
 
 // StateEvents secondary template
-template <typename StateMachine, typename StateMachine::State_t state>
-struct StateEvents<StateMachine, state, static_cast<size_t>(-1)> {
+template <typename State, typename Event, typename Action, State state>
+struct StateEvents<State, Event, Action, state, static_cast<size_t>(-1)> {
   static constexpr void GetTransitionData() {}
 };
 
 // StateMachineStates primary template
-template <typename StateMachine,
-          size_t state_index = StateMachine::State_t::kStateCount - 1>
+template <typename State, typename Event, typename Action,
+          size_t state_index = State::kStateCount - 1>
 struct StateMachineStates
-    : public StateMachineStates<StateMachine, state_index - 1> {
-  using State_t = typename StateMachine::State_t;
+    : public StateMachineStates<State, Event, Action, state_index - 1> {
   using StateEvents_t =
-      StateEvents<StateMachine, static_cast<State_t>(state_index)>;
+      StateEvents<State, Event, Action, static_cast<State>(state_index)>;
 };
 
 // StateMachineStates secondary template
-template <typename StateMachine>
-struct StateMachineStates<StateMachine, static_cast<size_t>(-1)> {};
+template <typename State, typename Event, typename Action>
+struct StateMachineStates<State, Event, Action, static_cast<size_t>(-1)> {};
 
-template <typename Client, typename State, typename Event, typename Action>
+template <typename State, typename Event, typename Action>
 class StateMachineDescription {
  public:
-  using Client_t = Client;
   using State_t = State;
   using Event_t = Event;
   using Action_t = Action;
 
   template <State_t state, Event_t event>
-  using TransitionKey_t = TransitionKey<StateMachineDescription, state, event>;
+  using TransitionKey_t = TransitionKey<State_t, Event_t, state, event>;
 
   using TransitionData_t = TransitionData<State_t, Action_t>;
 
-  struct StateTransitionData {
-    TransitionData_t event_transitions[Event::kEventCount];
-  };
+  using StateTransitionDataArray_t = TransitionData_t[Event::kEventCount];
 
-  StateTransitionData transitions[State::kStateCount];
+  using TransitionDataMatrix_t = StateTransitionDataArray_t[State::kStateCount];
+
+  static const TransitionData_t& GetTransitionData(State_t state,
+                                                   Event_t event) {
+    return (transition_data_matrix[state])[event];
+  }
+
+  static const TransitionDataMatrix_t transition_data_matrix;
 };
 
 template <typename Client, typename State = typename Client::State,
@@ -138,11 +134,16 @@ class StateMachine {
   using Action_t = void (Client::*)(ActionParameterTypes...);
 
   using StateMachineDescription_t =
-      StateMachineDescription<Client_t, State_t, Event_t, Action_t>;
+      StateMachineDescription<State_t, Event_t, Action_t>;
+
+  template <State state>
+  using StateEvents_t = StateEvents<State_t, Event_t, Action_t, state>;
 
   static constexpr bool IsValidState(State_t state) {
     return StateMachineDescription_t::IsValidState(state);
   }
+
+  State_t current_state_{State_t::INITIAL_STATE};
 };
 
 // state machine
@@ -201,14 +202,15 @@ class Client1 {
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 };
 
-#define DEF_TRANS(STATE_MACHINE, SRC_STATE, EVENT, DST_STATE, ACTION)         \
-  template <>                                                                 \
-  struct TransitionMapEntry<STATE_MACHINE, STATE_MACHINE::State_t::SRC_STATE, \
-                            STATE_MACHINE::Event_t::EVENT> {                  \
-    using DestState_t = ValueHolder<STATE_MACHINE::State_t,                   \
-                                    STATE_MACHINE::State_t::DST_STATE>;       \
-    using Action_t = ValueHolder<STATE_MACHINE ::Action_t,                    \
-                                 &STATE_MACHINE::Client_t::ACTION>;           \
+#define DEF_TRANS(STATE_MACHINE, SRC_STATE, EVENT, DST_STATE, ACTION)          \
+  template <>                                                                  \
+  struct TransitionMapEntry<                                                   \
+      STATE_MACHINE::State_t, STATE_MACHINE::Event_t, STATE_MACHINE::Action_t, \
+      STATE_MACHINE::State_t::SRC_STATE, STATE_MACHINE::Event_t::EVENT> {      \
+    using DestState_t = ValueHolder<STATE_MACHINE::State_t,                    \
+                                    STATE_MACHINE::State_t::DST_STATE>;        \
+    using Action_t = ValueHolder<STATE_MACHINE ::Action_t,                     \
+                                 &STATE_MACHINE::Client_t::ACTION>;            \
   };
 
 // template <typename Client>
@@ -216,15 +218,12 @@ class Client1 {
 //
 // DECL_STATE_MACHINE_DESCRIPTION(Client1, Client1Fsm)
 
-DEF_TRANS(Client1::StateMachineDescription_t, INITIAL_STATE, kStartAEvt,
-          A_STATE, DoStartA)
+DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
 
-DEF_TRANS(Client1::StateMachineDescription_t, INITIAL_STATE, kStartBEvt,
-          B_STATE, DoStartB)
+DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE, DoStartB)
 
 TEST(aofsm_StateMachine, StateEventsInstantiation) {
-  StateEvents<Client1::StateMachineDescription_t, Client1::INITIAL_STATE>
-      state_events;
+  Client1::StateMachine_t::StateEvents_t<Client1::INITIAL_STATE> state_events;
 
   auto transition_data1 = state_events.GetTransitionData(
       Client1::StateMachineDescription_t::TransitionKey_t<
