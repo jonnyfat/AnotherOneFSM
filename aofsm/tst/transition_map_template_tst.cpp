@@ -24,14 +24,6 @@ struct InvalidState {
 // auskommentiert werden template <typename State_t> constexpr State_t
 // InvalidState<State_t>::value;
 
-// Schlüssel für Suche einer Transitionen
-// Wird als Parameter für Argument Dependent Lookup benutzt
-template <typename State, typename Event, State src_state, Event event>
-struct TransitionKey {
-  using SrcState_t = ValueHolder<State, src_state>;
-  using Event_t = ValueHolder<Event, event>;
-};
-
 // Daten einer Transitionen für ein Event in einem Zustand
 template <typename State, typename Event, typename Action, State src_state,
           Event event>
@@ -53,6 +45,11 @@ struct TransitionData {
   bool IsValidState() const { return !IsInvalidState(); }
 };
 
+// Schlüssel für Suche einer Transition für einen State
+// Wird als Parameter für Argument Dependent Lookup benutzt
+template <typename Event, Event event>
+using EventKeyVaueHolder_t = ValueHolder<Event, event>;
+
 // StateEvents primary template
 template <typename State, typename Event, typename Action, State state,
           size_t event_index = Event::kEventCount - 1>
@@ -63,8 +60,8 @@ struct StateEvents
   using Event_t = Event;
   using Action_t = Action;
 
-  using TransitionKey_t =
-      TransitionKey<State, Event, state, static_cast<Event_t>(event_index)>;
+  using EventKeyKey_t =
+      EventKeyVaueHolder_t<Event, static_cast<Event_t>(event_index)>;
 
   using TransitionMapEntry_t =
       TransitionMapEntry<State, Event, Action, state,
@@ -73,7 +70,7 @@ struct StateEvents
   using Base_t::GetTransitionData;
 
   static constexpr TransitionData<State_t, Action_t> GetTransitionData(
-      const TransitionKey_t&) {
+      const EventKeyKey_t&) {
     return {TransitionMapEntry_t::DestState_t::value,
             TransitionMapEntry_t::Action_t::value};
   }
@@ -109,13 +106,13 @@ struct StateMachineStates
     return StateEventsData_t();
   }
 
-  template <State state, Event event>
-  using TransitionKey_t = TransitionKey<State, Event, state, event>;
+  template <Event event>
+  using EventKeyVaueHolder_t = EventKeyVaueHolder_t<Event, event>;
 
   template <State state, Event event>
   static constexpr TransitionData<State, Action> GetTransitionData() {
     return GetStateEventsData(StateKeyVaueHolder_t<state>())
-        .GetTransitionData(TransitionKey_t<state, event>());
+        .GetTransitionData(EventKeyVaueHolder_t<event>());
   }
 };
 
