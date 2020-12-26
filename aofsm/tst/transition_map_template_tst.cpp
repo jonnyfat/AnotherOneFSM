@@ -8,10 +8,18 @@ using std::size_t;
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-// "Generiert" für einen State-Type einen ungpltigen Wert
-template <typename State_t>
+// Type-Trait für einen State-Type.
+// Definiert ungültigen Wert
+template <typename State>
 struct InvalidState {
-  static constexpr State_t value = State_t::kStateCount;
+  static constexpr State value = State::kStateCount;
+};
+
+// Type-Trait für einen Action-Type.
+// Definiert ungültigen Wert
+template <typename Action>
+struct InvalidAction {
+  static constexpr Action value = nullptr;
 };
 // Falls dem Linker InvalidState<>::value fehlt, dann muss folgendes
 // auskommentiert werden:
@@ -43,11 +51,8 @@ template <typename State, typename Event, typename Action, State src_state,
 struct TransitionMapEntry {
   // Default-Werte für Destination State und Action, falls für src_state und
   // event nicht anderes spezialsiert wurde.
-  using DestState_t = ValueHolder<State, InvalidState<State>::value>;
-  using Action_t = ValueHolder<Action, nullptr>;
-
   static constexpr TransitionData<State, Action> transition_data{
-      DestState_t::value, Action_t::value};
+      InvalidState<State>::value, InvalidAction<Action>::value};
 };
 
 // Schlüssel für Suche einer Transition für einen State
@@ -61,23 +66,18 @@ template <typename State, typename Event, typename Action, State state,
 struct StateEvents
     : public StateEvents<State, Event, Action, state, event_index - 1> {
   using Base_t = StateEvents<State, Event, Action, state, event_index - 1>;
-  using State_t = State;
-  using Event_t = Event;
-  using Action_t = Action;
-
-  using EventValue_t =
-      EventVaueHolder_t<Event, static_cast<Event_t>(event_index)>;
-
-  using TransitionMapEntry_t =
-      TransitionMapEntry<State, Event, Action, state,
-                         static_cast<Event_t>(event_index)>;
 
   using Base_t::GetTransitionData;
 
-  static constexpr TransitionData<State_t, Action_t> GetTransitionData(
+  using EventValue_t =
+      EventVaueHolder_t<Event, static_cast<Event>(event_index)>;
+
+  static constexpr TransitionData<State, Action> GetTransitionData(
       const EventValue_t&) {
-    return {TransitionMapEntry_t::DestState_t::value,
-            TransitionMapEntry_t::Action_t::value};
+    using TransitionMapEntry_t =
+        TransitionMapEntry<State, Event, Action, state,
+                           static_cast<Event>(event_index)>;
+    return TransitionMapEntry_t::transition_data;
   }
 };
 
@@ -232,13 +232,10 @@ class Client1 {
   struct TransitionMapEntry<                                                   \
       STATE_MACHINE::State_t, STATE_MACHINE::Event_t, STATE_MACHINE::Action_t, \
       STATE_MACHINE::State_t::SRC_STATE, STATE_MACHINE::Event_t::EVENT> {      \
-    using DestState_t = ValueHolder<STATE_MACHINE::State_t,                    \
-                                    STATE_MACHINE::State_t::DST_STATE>;        \
-    using Action_t = ValueHolder<STATE_MACHINE ::Action_t,                     \
-                                 &STATE_MACHINE::Client_t::ACTION>;            \
     static constexpr TransitionData<STATE_MACHINE::State_t,                    \
                                     STATE_MACHINE ::Action_t>                  \
-        transition_data = {DestState_t::value, Action_t::value};               \
+        transition_data = {STATE_MACHINE::State_t::DST_STATE,                  \
+                           &STATE_MACHINE::Client_t::ACTION};                  \
   };
 
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
