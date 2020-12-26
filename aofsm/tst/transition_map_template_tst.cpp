@@ -84,6 +84,9 @@ struct StateEvents<State, Event, Action, state, static_cast<size_t>(-1)> {
   static constexpr void GetTransitionData() {}
 };
 
+template <typename State, State state>
+using StateVaueHolder_t = ValueHolder<State, state>;
+
 // StateMachineStates primary template
 template <typename State, typename Event, typename Action,
           size_t state_index = State::kStateCount - 1>
@@ -97,24 +100,13 @@ struct StateMachineStates
   using StateEventsData_t =
       StateEvents<State, Event, Action, static_cast<State>(state_index)>;
 
-  template <State state>
-  using StateVaueHolder_t = ValueHolder<State, state>;
-
-  using StateValue_t = StateVaueHolder_t<static_cast<State>(state_index)>;
+  using StateValue_t =
+      StateVaueHolder_t<State, static_cast<State>(state_index)>;
 
   using Base_t::GetStateEventsData;
 
   static constexpr StateEventsData_t GetStateEventsData(const StateValue_t&) {
     return StateEventsData_t();
-  }
-
-  template <Event event>
-  using EventVaueHolder_t = EventVaueHolder_t<Event, event>;
-
-  template <State state, Event event>
-  static constexpr TransitionData<State, Action> GetTransitionData() {
-    return GetStateEventsData(StateVaueHolder_t<state>())
-        .GetTransitionData(EventVaueHolder_t<event>());
   }
 };
 
@@ -130,6 +122,15 @@ class StateMachineDescription {
   using State_t = State;
   using Event_t = Event;
   using Action_t = Action;
+
+  using StateMachineStates_t = StateMachineStates<State_t, Event_t, Action_t>;
+
+  template <State state, Event event>
+  static constexpr TransitionData<State, Action> GetTransitionData() {
+    return StateMachineStates_t::GetStateEventsData(
+               StateVaueHolder_t<State_t, state>())
+        .GetTransitionData(EventVaueHolder_t<Event_t, event>());
+  }
 
   using TransitionData_t = TransitionData<State_t, Action_t>;
 
@@ -159,11 +160,6 @@ class StateMachine {
 
   using StateMachineDescription_t =
       StateMachineDescription<State_t, Event_t, Action_t>;
-
-  template <State state>
-  using StateEvents_t = StateEvents<State_t, Event_t, Action_t, state>;
-
-  using StateMachineStates_t = StateMachineStates<State_t, Event_t, Action_t>;
 
   static constexpr bool IsValidState(State_t state) {
     return StateMachineDescription_t::IsValidState(state);
@@ -244,7 +240,7 @@ DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE, DoStartB)
 
 TEST(aofsm_StateMachine, StateEventsInstantiation) {
-  Client1::StateMachine_t::StateMachineStates_t state_machine_states;
+  Client1::StateMachine_t::StateMachineDescription_t state_machine_states;
 
   auto transition_data1 =
       state_machine_states
