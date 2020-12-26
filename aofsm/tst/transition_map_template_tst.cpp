@@ -8,12 +8,6 @@ using std::size_t;
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-// ValueHolder macht aus einem Wert von Typ ValueType einen Datentyp
-template <typename ValueType, ValueType VALUE>
-struct ValueHolder {
-  static constexpr ValueType value = VALUE;
-};
-
 // "Generiert" für einen State-Type einen ungpltigen Wert
 template <typename State_t>
 struct InvalidState {
@@ -25,6 +19,22 @@ struct InvalidState {
 // template <typename State_t>
 // constexpr State_t InvalidState<State_t>::value;
 
+template <typename State, typename Action>
+struct TransitionData {
+  State dest_state;
+  Action action;
+  bool IsInvalidState() const {
+    return dest_state == InvalidState<State>::value;
+  }
+  bool IsValidState() const { return !IsInvalidState(); }
+};
+
+// ValueHolder macht aus einem Wert von Typ ValueType einen Datentyp
+template <typename ValueType, ValueType VALUE>
+struct ValueHolder {
+  static constexpr ValueType value = VALUE;
+};
+
 // Daten einer Transitionen für ein Event in einem Zustand
 // Durch Template-Spezialisierung können die State-Machine-Transitionen zur
 // Kompilierzeit berechnet werden.
@@ -35,16 +45,9 @@ struct TransitionMapEntry {
   // event nicht anderes spezialsiert wurde.
   using DestState_t = ValueHolder<State, InvalidState<State>::value>;
   using Action_t = ValueHolder<Action, nullptr>;
-};
 
-template <typename State, typename Action>
-struct TransitionData {
-  State dest_state;
-  Action action;
-  bool IsInvalidState() const {
-    return dest_state == InvalidState<State>::value;
-  }
-  bool IsValidState() const { return !IsInvalidState(); }
+  static constexpr TransitionData<State, Action> transition_data{
+      DestState_t::value, Action_t::value};
 };
 
 // Schlüssel für Suche einer Transition für einen State
@@ -233,6 +236,9 @@ class Client1 {
                                     STATE_MACHINE::State_t::DST_STATE>;        \
     using Action_t = ValueHolder<STATE_MACHINE ::Action_t,                     \
                                  &STATE_MACHINE::Client_t::ACTION>;            \
+    static constexpr TransitionData<STATE_MACHINE::State_t,                    \
+                                    STATE_MACHINE ::Action_t>                  \
+        transition_data = {DestState_t::value, Action_t::value};               \
   };
 
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
