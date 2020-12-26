@@ -132,9 +132,6 @@ class StateMachineDescription {
   using Event_t = Event;
   using Action_t = Action;
 
-  template <State_t state, Event_t event>
-  using TransitionKey_t = TransitionKey<State_t, Event_t, state, event>;
-
   using TransitionData_t = TransitionData<State_t, Action_t>;
 
   using StateTransitionDataArray_t = TransitionData_t[Event::kEventCount];
