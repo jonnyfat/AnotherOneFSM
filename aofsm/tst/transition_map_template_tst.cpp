@@ -8,10 +8,9 @@ using std::size_t;
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-// ValueHolder macht aus einem Wert einen Datentyp
+// ValueHolder macht aus einem Wert von Typ ValueType einen Datentyp
 template <typename ValueType, ValueType VALUE>
 struct ValueHolder {
-  using ValueType_t = ValueType;
   static constexpr ValueType value = VALUE;
 };
 
@@ -21,17 +20,20 @@ struct InvalidState {
   static constexpr State_t value = State_t::kStateCount;
 };
 // Falls dem Linker InvalidState<>::value fehlt, dann muss folgendes
-// auskommentiert werden template <typename State_t> constexpr State_t
-// InvalidState<State_t>::value;
+// auskommentiert werden:
+//
+// template <typename State_t>
+// constexpr State_t InvalidState<State_t>::value;
 
 // Daten einer Transitionen für ein Event in einem Zustand
+// Durch Template-Spezialisierung können die State-Machine-Transitionen zur
+// Kompilierzeit berechnet werden.
 template <typename State, typename Event, typename Action, State src_state,
           Event event>
 struct TransitionMapEntry {
-  // Invalid StateId
+  // Default-Werte für Destination State und Action, falls für src_state und
+  // event nicht anderes spezialsiert wurde.
   using DestState_t = ValueHolder<State, InvalidState<State>::value>;
-
-  // Invalid Action
   using Action_t = ValueHolder<Action, nullptr>;
 };
 
@@ -48,7 +50,7 @@ struct TransitionData {
 // Schlüssel für Suche einer Transition für einen State
 // Wird als Parameter für Argument Dependent Lookup benutzt
 template <typename Event, Event event>
-using EventKeyVaueHolder_t = ValueHolder<Event, event>;
+using EventVaueHolder_t = ValueHolder<Event, event>;
 
 // StateEvents primary template
 template <typename State, typename Event, typename Action, State state,
@@ -60,8 +62,8 @@ struct StateEvents
   using Event_t = Event;
   using Action_t = Action;
 
-  using EventKeyKey_t =
-      EventKeyVaueHolder_t<Event, static_cast<Event_t>(event_index)>;
+  using EventValue_t =
+      EventVaueHolder_t<Event, static_cast<Event_t>(event_index)>;
 
   using TransitionMapEntry_t =
       TransitionMapEntry<State, Event, Action, state,
@@ -70,7 +72,7 @@ struct StateEvents
   using Base_t::GetTransitionData;
 
   static constexpr TransitionData<State_t, Action_t> GetTransitionData(
-      const EventKeyKey_t&) {
+      const EventValue_t&) {
     return {TransitionMapEntry_t::DestState_t::value,
             TransitionMapEntry_t::Action_t::value};
   }
@@ -96,23 +98,23 @@ struct StateMachineStates
       StateEvents<State, Event, Action, static_cast<State>(state_index)>;
 
   template <State state>
-  using StateKeyVaueHolder_t = ValueHolder<State, state>;
+  using StateVaueHolder_t = ValueHolder<State, state>;
 
-  using StateKey_t = StateKeyVaueHolder_t<static_cast<State>(state_index)>;
+  using StateValue_t = StateVaueHolder_t<static_cast<State>(state_index)>;
 
   using Base_t::GetStateEventsData;
 
-  static constexpr StateEventsData_t GetStateEventsData(const StateKey_t&) {
+  static constexpr StateEventsData_t GetStateEventsData(const StateValue_t&) {
     return StateEventsData_t();
   }
 
   template <Event event>
-  using EventKeyVaueHolder_t = EventKeyVaueHolder_t<Event, event>;
+  using EventVaueHolder_t = EventVaueHolder_t<Event, event>;
 
   template <State state, Event event>
   static constexpr TransitionData<State, Action> GetTransitionData() {
-    return GetStateEventsData(StateKeyVaueHolder_t<state>())
-        .GetTransitionData(EventKeyVaueHolder_t<event>());
+    return GetStateEventsData(StateVaueHolder_t<state>())
+        .GetTransitionData(EventVaueHolder_t<event>());
   }
 };
 
