@@ -6,7 +6,10 @@
 #include <cstddef>
 
 #include "aofsm/src/state_info.h"
+
 #include "aofsm/src/transition.h"
+
+#include "aofsm/src/transition_description.h"
 
 namespace aofsm {
 

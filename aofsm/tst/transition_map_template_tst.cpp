@@ -8,116 +8,27 @@ using std::size_t;
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-// Type-Trait für einen State-Type.
-// Definiert ungültigen Wert
-template <typename State>
-struct InvalidState {
-  static constexpr State value = State::kStateCount;
-};
+#include "aofsm/src/value_holder.h"
 
-// Type-Trait für einen Action-Type.
-// Definiert ungültigen Wert
-template <typename Action>
-struct InvalidAction {
-  static constexpr Action value = nullptr;
-};
-// Falls dem Linker InvalidState<>::value fehlt, dann muss folgendes
-// auskommentiert werden:
-//
-// template <typename State_t>
-// constexpr State_t InvalidState<State_t>::value;
+#include "aofsm/src/invalid_state.h"
+#include "aofsm/src/invalid_action.h"
 
-template <typename State, typename Action>
-struct TransitionData {
-  State dest_state;
-  Action action;
-  bool IsInvalidState() const {
-    return dest_state == InvalidState<State>::value;
-  }
-  bool IsValidState() const { return !IsInvalidState(); }
-};
+#include "aofsm/src/transition_data.h"
 
-// ValueHolder macht aus einem Wert von Typ ValueType einen Datentyp
-template <typename ValueType, ValueType VALUE>
-struct ValueHolder {
-  static constexpr ValueType value = VALUE;
-};
+#include "aofsm/src/transition_description.h"
 
-// Daten einer Transitionen für ein Event in einem Zustand
-// Durch Template-Spezialisierung können die State-Machine-Transitionen zur
-// Kompilierzeit berechnet werden.
-template <typename State, typename Event, typename Action, State src_state,
-          Event event>
-struct TransitionMapEntry {
-  // Default-Werte für Destination State und Action, falls für src_state und
-  // event nicht anderes spezialsiert wurde.
-  static constexpr TransitionData<State, Action> transition_data{
-      InvalidState<State>::value, InvalidAction<Action>::value};
-};
+#include "aofsm/src/states_list.h"
 
-// Schlüssel für Suche einer Transition für einen State
-// Wird als Parameter für Argument Dependent Lookup benutzt
-template <typename Event, Event event>
-using EventVaueHolder_t = ValueHolder<Event, event>;
+using aofsm::internal::ValueHolder;
 
-// StateEvents primary template
-template <typename State, typename Event, typename Action, State state,
-          size_t event_index = Event::kEventCount - 1>
-struct StateEvents
-    : public StateEvents<State, Event, Action, state, event_index - 1> {
-  using Base_t = StateEvents<State, Event, Action, state, event_index - 1>;
+using aofsm::internal::InvalidAction;
+using aofsm::internal::InvalidState;
 
-  using Base_t::GetTransitionData;
+using aofsm::TransitionData;
 
-  using EventValue_t =
-      EventVaueHolder_t<Event, static_cast<Event>(event_index)>;
+using aofsm::TransitionDescription;
 
-  static constexpr TransitionData<State, Action> GetTransitionData(
-      const EventValue_t&) {
-    using TransitionMapEntry_t =
-        TransitionMapEntry<State, Event, Action, state,
-                           static_cast<Event>(event_index)>;
-    return TransitionMapEntry_t::transition_data;
-  }
-};
-
-// StateEvents secondary template
-template <typename State, typename Event, typename Action, State state>
-struct StateEvents<State, Event, Action, state, static_cast<size_t>(-1)> {
-  static constexpr void GetTransitionData() {}
-};
-
-template <typename State, State state>
-using StateVaueHolder_t = ValueHolder<State, state>;
-
-// StateMachineStates primary template
-template <typename State, typename Event, typename Action,
-          size_t state_index = State::kStateCount - 1>
-struct StateMachineStates
-    : public StateMachineStates<State, Event, Action, state_index - 1> {
-  using Base_t = StateMachineStates<State, Event, Action, state_index - 1>;
-
-  template <State state>
-  using EventsData_t = StateEvents<State, Event, Action, state>;
-
-  using StateEventsData_t =
-      StateEvents<State, Event, Action, static_cast<State>(state_index)>;
-
-  using StateValue_t =
-      StateVaueHolder_t<State, static_cast<State>(state_index)>;
-
-  using Base_t::GetStateEventsData;
-
-  static constexpr StateEventsData_t GetStateEventsData(const StateValue_t&) {
-    return StateEventsData_t();
-  }
-};
-
-// StateMachineStates secondary template
-template <typename State, typename Event, typename Action>
-struct StateMachineStates<State, Event, Action, static_cast<size_t>(-1)> {
-  static constexpr void GetStateEventsData() {}
-};
+using aofsm::internal::StatesList;
 
 template <typename State, typename Event, typename Action>
 class StateMachineDescription {
@@ -126,13 +37,15 @@ class StateMachineDescription {
   using Event_t = Event;
   using Action_t = Action;
 
-  using StateMachineStates_t = StateMachineStates<State_t, Event_t, Action_t>;
+  template <State src_state, Event event>
+  using TransitionMapEntry_t =
+      TransitionDescription<State, Event, Action, src_state, event>;
+
+  using StateMachineStates_t = StatesList<State_t, Event_t, Action_t>;
 
   template <State state, Event event>
   static constexpr TransitionData<State, Action> GetTransitionData() {
-    return StateMachineStates_t::GetStateEventsData(
-               StateVaueHolder_t<State_t, state>())
-        .GetTransitionData(EventVaueHolder_t<Event_t, event>());
+    return StateMachineStates_t::template GetTransitionData<state, event>();
   }
 
   using TransitionData_t = TransitionData<State_t, Action_t>;
@@ -227,15 +140,14 @@ class Client1 {
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 };
 
-#define DEF_TRANS(STATE_MACHINE, SRC_STATE, EVENT, DST_STATE, ACTION)          \
-  template <>                                                                  \
-  struct TransitionMapEntry<                                                   \
-      STATE_MACHINE::State_t, STATE_MACHINE::Event_t, STATE_MACHINE::Action_t, \
-      STATE_MACHINE::State_t::SRC_STATE, STATE_MACHINE::Event_t::EVENT> {      \
-    static constexpr TransitionData<STATE_MACHINE::State_t,                    \
-                                    STATE_MACHINE ::Action_t>                  \
-        transition_data = {STATE_MACHINE::State_t::DST_STATE,                  \
-                           &STATE_MACHINE::Client_t::ACTION};                  \
+#define DEF_TRANS(FSM_DESCR, SRC_STATE, EVENT, DST_STATE, ACTION)             \
+  template <>                                                                 \
+  struct aofsm::TransitionDescription<                                        \
+      FSM_DESCR::State_t, FSM_DESCR::Event_t, FSM_DESCR::Action_t,            \
+      FSM_DESCR::State_t::SRC_STATE, FSM_DESCR::Event_t::EVENT> {             \
+    static constexpr TransitionData<FSM_DESCR::State_t, FSM_DESCR ::Action_t> \
+        transition_data = {FSM_DESCR::State_t::DST_STATE,                     \
+                           &FSM_DESCR::Client_t::ACTION};                     \
   };
 
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
@@ -243,6 +155,33 @@ DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE, DoStartB)
 
 TEST(aofsm_StateMachine, StateEventsInstantiation) {
+  Client1::StateMachine_t::StateMachineDescription_t state_machine_states;
+
+  auto transition_data1 =
+      state_machine_states
+          .GetTransitionData<Client1::INITIAL_STATE, Client1::kStartAEvt>();
+
+  EXPECT_TRUE(transition_data1.IsValidState());
+  EXPECT_EQ(transition_data1.dest_state, Client1::A_STATE);
+  EXPECT_EQ(transition_data1.action, &Client1::DoStartA);
+
+  auto transition_data2 =
+      state_machine_states
+          .GetTransitionData<Client1::INITIAL_STATE, Client1::kStartBEvt>();
+
+  EXPECT_TRUE(transition_data2.IsValidState());
+  EXPECT_EQ(transition_data2.dest_state, Client1::B_STATE);
+  EXPECT_EQ(transition_data2.action, &Client1::DoStartB);
+
+  auto transition_data3 =
+      state_machine_states
+          .GetTransitionData<Client1::INITIAL_STATE, Client1::kEndEvt>();
+
+  EXPECT_FALSE(transition_data3.IsValidState());
+  EXPECT_EQ(transition_data3.action, nullptr);
+}
+
+TEST(aofsm_StateMachine, TransitionDescription) {
   Client1::StateMachine_t::StateMachineDescription_t state_machine_states;
 
   auto transition_data1 =
