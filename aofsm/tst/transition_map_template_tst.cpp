@@ -33,50 +33,31 @@ using aofsm::internal::StatesList;
 template <typename State, typename Event, typename Action>
 class StateMachineDescription {
  public:
-  using State_t = State;
-  using Event_t = Event;
-  using Action_t = Action;
-
-  //----------------------------------------
-  //--
-  using StateMachineStates_t = StatesList<State_t, Event_t, Action_t>;
-
-  template <State state, Event event>
-  static constexpr TransitionData<State, Action> GetTransitionDataOld() {
-    return StateMachineStates_t::template GetTransitionData<state, event>();
-  }
-  //--
-  //----------------------------------------
-
-  //----------------------------------------
-  //--
+  // Alias
   template <State src_state, Event event>
-  using TransitionMapEntry_t =
+  using TransitionDescription_t =
       TransitionDescription<State, Event, Action, src_state, event>;
 
   template <State state, Event event>
   static constexpr TransitionData<State, Action> GetTransitionData() {
-    return TransitionMapEntry_t<state, event>::transition_data;
+    return TransitionDescription_t<state, event>::transition_data;
   }
 
   template <size_t state_idx, size_t event_idx>
   static constexpr TransitionData<State, Action> SE() {
-    return TransitionMapEntry_t<static_cast<State>(state_idx),
-                                static_cast<Event>(event_idx)>::transition_data;
+    return TransitionDescription_t<static_cast<State>(state_idx),
+                                   static_cast<Event>(
+                                       event_idx)>::transition_data;
   };
 
-  //--
-  //----------------------------------------
-
-  using TransitionData_t = TransitionData<State_t, Action_t>;
+  using TransitionData_t = TransitionData<State, Action>;
 
   using StateTransitionDataArray_t = TransitionData_t[Event::kEventCount];
 
   using TransitionDataMatrix_t = StateTransitionDataArray_t[State::kStateCount];
 
-  static const TransitionData_t& GetTransitionData(State_t state,
-                                                   Event_t event) {
-    return (transition_data_matrix[state])[event];
+  static const TransitionData_t& GetTransitionData(State state, Event event) {
+    return transition_data_matrix[state][event];
   }
 
   static const TransitionDataMatrix_t transition_data_matrix;
@@ -179,6 +160,8 @@ DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
 
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE, DoStartB)
 
+DEF_TRANS(Client1::StateMachine_t, B_STATE, kEndEvt, FINAL_STATE, DoEndB)
+
 template <>
 const Client1::StateMachine_t::StateMachineDescription_t::TransitionDataMatrix_t
     Client1::StateMachine_t::StateMachineDescription_t::transition_data_matrix =
@@ -252,6 +235,13 @@ TEST(aofsm_StateMachine, StateMachineDescription_RunTime) {
 
   EXPECT_FALSE(transition_data3.IsValidState());
   EXPECT_EQ(transition_data3.action, nullptr);
+
+  auto transition_data4 = state_machine_description.GetTransitionData(
+      Client1::B_STATE, Client1::kEndEvt);
+
+  EXPECT_TRUE(transition_data4.IsValidState());
+  EXPECT_EQ(transition_data4.dest_state, Client1::FINAL_STATE);
+  EXPECT_EQ(transition_data4.action, &Client1::DoEndB);
 }
 
 TEST(aofsm_StateMachine, Dummy) {}
