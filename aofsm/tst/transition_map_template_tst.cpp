@@ -37,16 +37,29 @@ class StateMachineDescription {
   using Event_t = Event;
   using Action_t = Action;
 
+  //----------------------------------------
+  //--
+  using StateMachineStates_t = StatesList<State_t, Event_t, Action_t>;
+
+  template <State state, Event event>
+  static constexpr TransitionData<State, Action> GetTransitionDataOld() {
+    return StateMachineStates_t::template GetTransitionData<state, event>();
+  }
+  //--
+  //----------------------------------------
+
+  //----------------------------------------
+  //--
   template <State src_state, Event event>
   using TransitionMapEntry_t =
       TransitionDescription<State, Event, Action, src_state, event>;
 
-  using StateMachineStates_t = StatesList<State_t, Event_t, Action_t>;
-
   template <State state, Event event>
   static constexpr TransitionData<State, Action> GetTransitionData() {
-    return StateMachineStates_t::template GetTransitionData<state, event>();
+    return TransitionMapEntry_t<state, event>::transition_data;
   }
+  //--
+  //----------------------------------------
 
   using TransitionData_t = TransitionData<State_t, Action_t>;
 
