@@ -42,15 +42,15 @@ constexpr T ArrayHolderConstexpr<T, args...>::data[sizeof...(args)];
 
 //---------------------------------------
 // ArrayHolder2Constexpr
-template <typename ElementType, typename... EntryInitTypes>
+template <typename EntryType, typename... EntryInitTypes>
 struct ArrayHolder2Constexpr {
-  static constexpr ElementType data[sizeof...(EntryInitTypes)] = {
+  static constexpr EntryType data[sizeof...(EntryInitTypes)] = {
       EntryInitTypes::value...};
 };
 
-template <typename ElementType, typename... EntryInitTypes>
-constexpr ElementType ArrayHolder2Constexpr<
-    ElementType, EntryInitTypes...>::data[sizeof...(EntryInitTypes)];
+template <typename EntryType, typename... EntryInitTypes>
+constexpr EntryType ArrayHolder2Constexpr<
+    EntryType, EntryInitTypes...>::data[sizeof...(EntryInitTypes)];
 
 //---------------------------------------
 // ArrayHolderConst
@@ -76,19 +76,19 @@ class StateMachineDescription {
   using TransitionDescription_t =
       TransitionDescription<State, Event, Action, src_state, event>;
 
+  using TransitionData_t = TransitionData<State, Action>;
+
   template <State state, Event event>
-  static constexpr TransitionData<State, Action> GetTransitionData() {
+  static constexpr TransitionData_t GetTransitionData() {
     return TransitionDescription_t<state, event>::transition_data;
   }
 
   template <size_t state_idx, size_t event_idx>
-  static constexpr TransitionData<State, Action> SE() {
+  static constexpr TransitionData_t SE() {
     return TransitionDescription_t<static_cast<State>(state_idx),
                                    static_cast<Event>(
                                        event_idx)>::transition_data;
   };
-
-  using TransitionData_t = TransitionData<State, Action>;
 
   using StateTransitionDataArray_t = TransitionData_t[Event::kEventCount];
 
@@ -311,10 +311,29 @@ struct GetIndex {
   static constexpr size_t value = state * Event::kEventCount + event;
 };
 
-TEST(aofsm_StateMachine, Dummy) {
+TEST(aofsm_StateMachine, GetDestState) {
   auto dest_state = GetDestState<
       ClientState_t, ClientEvent_t, ClientAction_t,
       GetIndex<ClientState_t, ClientEvent_t, Client1::INITIAL_STATE,
                Client1::kStartAEvt>::value>::value;
   EXPECT_EQ(Client1::A_STATE, dest_state);
+}
+
+using TransitionData_t = Client1::StateMachine_t::TransitionData_t;
+
+template <ClientState_t src_state, ClientEvent_t event>
+using TransitionDescription_t =
+    Client1::StateMachine_t::StateMachineDescription_t::TransitionDescription_t<
+        src_state, event>;
+
+ArrayHolder2Constexpr<TransitionData_t> empty_transition_data_array;
+
+ArrayHolder2Constexpr<
+    TransitionData_t,
+    TransitionDescription_t<Client1::INITIAL_STATE, Client1::kStartAEvt> >
+    one_el_transition_data_array;
+
+TEST(aofsm_StateMachine, ArrayHolder2) {
+  EXPECT_EQ(Client1::A_STATE, one_el_transition_data_array.data[0].dest_state);
+  EXPECT_EQ(&Client1::DoStartA, one_el_transition_data_array.data[0].action);
 }
