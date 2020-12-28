@@ -23,6 +23,11 @@ struct TransitionDescription {
   // event nicht anderes spezialsiert wurde.
   static constexpr TransitionData<State, Action> transition_data{
       InvalidState<State>::value, InvalidAction<Action>::value};
+
+  // Default-Werte für Destination State und Action, falls für src_state und
+  // event nicht anderes spezialsiert wurde.
+  static constexpr TransitionData<State, Action> value{
+      InvalidState<State>::value, InvalidAction<Action>::value};
 };
 
 }  // namespace aofsm
