@@ -8,12 +8,12 @@ namespace aofsm {
 
 using internal::InvalidState;
 
-template <typename State, typename Action>
+template <typename Context>
 struct TransitionData {
-  State dest_state;
-  Action action;
+  typename Context::State_t dest_state;
+  typename Context::Action_t action;
   bool IsInvalidState() const {
-    return dest_state == InvalidState<State>::value;
+    return dest_state == InvalidState<typename Context::State_t>::value;
   }
   bool IsValidState() const { return !IsInvalidState(); }
 };

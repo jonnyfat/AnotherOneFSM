@@ -11,32 +11,29 @@ template <typename Event, Event event>
 using EventVaueHolder_t = ValueHolder<Event, event>;
 
 // StateEvents primary template
-template <typename State, typename Event, typename Action, State state,
-          size_t event_index = Event::kEventCount - 1>
+template <typename Context, typename Context::State_t state,
+          size_t event_index = Context::kEventCount - 1>
 struct StateTransitionsList
-    : public StateTransitionsList<State, Event, Action, state,
-                                  event_index - 1> {
-  using Base_t =
-      StateTransitionsList<State, Event, Action, state, event_index - 1>;
+    : public StateTransitionsList<Context, state, event_index - 1> {
+  using Base_t = StateTransitionsList<Context, state, event_index - 1>;
 
   using Base_t::GetTransitionData;
 
   using EventValue_t =
-      EventVaueHolder_t<Event, static_cast<Event>(event_index)>;
+      EventVaueHolder_t<typename Context::Event_t,
+                        static_cast<typename Context::Event_t>(event_index)>;
 
-  static constexpr TransitionData<State, Action> GetTransitionData(
+  static constexpr TransitionData<Context> GetTransitionData(
       const EventValue_t&) {
-    using TransitionMapEntry_t =
-        TransitionDescription<State, Event, Action, state,
-                              static_cast<Event>(event_index)>;
+    using TransitionMapEntry_t = TransitionDescription<
+        Context, state, static_cast<typename Context::Event_t>(event_index)>;
     return TransitionMapEntry_t::transition_data;
   }
 };
 
 // StateEvents secondary template
-template <typename State, typename Event, typename Action, State state>
-struct StateTransitionsList<State, Event, Action, state,
-                            static_cast<size_t>(-1)> {
+template <typename Context, typename Context::State_t state>
+struct StateTransitionsList<Context, state, static_cast<size_t>(-1)> {
   static constexpr void GetTransitionData() {}
 };
 
