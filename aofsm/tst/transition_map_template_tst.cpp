@@ -337,3 +337,111 @@ TEST(aofsm_StateMachine, ArrayHolder2) {
   EXPECT_EQ(Client1::A_STATE, one_el_transition_data_array.data[0].dest_state);
   EXPECT_EQ(&Client1::DoStartA, one_el_transition_data_array.data[0].action);
 }
+
+//-----------------------
+// TransitionDataArrayHolder
+template <typename State, typename Event, typename... TransitionDescriptions>
+struct TransitionDataArrayHolder {
+  static const TransitionData<State, Event>
+      data[sizeof...(TransitionDescriptions)];
+};
+
+template <typename State, typename Event, typename... TransitionDescriptions>
+const TransitionData<State, Event> TransitionDataArrayHolder<
+    State, Event,
+    TransitionDescriptions...>::data[sizeof...(TransitionDescriptions)] = {
+    TransitionDescriptions::transition_data...};
+
+//-----------------------
+// TransitionDataArray
+template <typename State, typename Action, typename... TransitionDescriptions>
+struct TransitionDataArray {
+  static constexpr TransitionData<State, Action> transition_data[sizeof...(
+      TransitionDescriptions)] = {{TransitionDescriptions::transition_data}...};
+};
+
+template <typename State, typename Action, typename... TransitionDescriptions>
+constexpr TransitionData<State, Action>
+    TransitionDataArray<State, Action, TransitionDescriptions...>::
+        transition_data[sizeof...(TransitionDescriptions)];
+
+//-----------------------
+// GenerateTransitionDataArrayImpl
+template <size_t EVENT_INDEX, typename State, typename Action,
+          template <size_t> class GetTransition,
+          typename... TransitionDescriptions>
+struct GenerateTransitionDataArrayImpl {
+  using TransitionDataArray_t = typename GenerateTransitionDataArrayImpl<
+      EVENT_INDEX - 1, State, Action, GetTransition,
+      typename GetTransition<EVENT_INDEX>::TransitionDescription_t,
+      TransitionDescriptions...>::TransitionDataArray_t;
+};
+
+template <typename State, typename Action,
+          template <size_t> class GetTransition,
+          typename... TransitionDescriptions>
+struct GenerateTransitionDataArrayImpl<0, State, Action, GetTransition,
+                                       TransitionDescriptions...> {
+  using TransitionDataArray_t =
+      TransitionDataArray<State, Action,
+                          typename GetTransition<0>::TransitionDescription_t,
+                          TransitionDescriptions...>;
+};
+
+template <size_t EVENT_COUNT, typename State, typename Action,
+          template <size_t> class GetTransition>
+struct GenerateTransitionDataArray {
+  using TransitionDataArray_t = typename GenerateTransitionDataArrayImpl<
+      EVENT_COUNT - 1, State, Action, GetTransition>::TransitionDataArray_t;
+};
+
+// Enthält Array mit TransitionData<> für den Zustand state.
+template <typename State, typename Event, typename Action, State state>
+struct StateTransitionsArray {
+  // Meta-Funktion:
+  //  Parameter: event_index
+  //  Rückgabewert: Typ : Template-Instanz von TransitionDescription für den
+  //  Event
+  template <size_t EVENT_INDEX>
+  struct GetTransition {
+    using TransitionDescription_t =
+        TransitionDescription<State, Event, Action, state,
+                              static_cast<Event>(EVENT_INDEX)>;
+  };
+
+  typename GenerateTransitionDataArray<
+      static_cast<size_t>(Event::kEventCount), State, Action,
+      GetTransition>::TransitionDataArray_t transition_data_array;
+
+  const TransitionData<State, Action>& GetTransitionData(Event event) {
+    return transition_data_array.transition_data[event];
+  }
+};
+
+TEST(aofsm_StateMachine, StateTransitionsArray) {
+  StateTransitionsArray<ClientState_t, ClientEvent_t, ClientAction_t,
+                        Client1::INITIAL_STATE>
+      TransitionsArray_INITIAL_STATE;
+
+  const TransitionData<ClientState_t, ClientAction_t>&
+      trans_INITIAL_STATE_kStartAEvt =
+          TransitionsArray_INITIAL_STATE.GetTransitionData(Client1::kStartAEvt);
+
+  EXPECT_EQ(Client1::A_STATE, trans_INITIAL_STATE_kStartAEvt.dest_state);
+  EXPECT_EQ(&Client1::DoStartA, trans_INITIAL_STATE_kStartAEvt.action);
+
+  const TransitionData<ClientState_t, ClientAction_t>&
+      trans_INITIAL_STATE_kStartBEvt =
+          TransitionsArray_INITIAL_STATE.GetTransitionData(Client1::kStartBEvt);
+
+  EXPECT_EQ(Client1::B_STATE, trans_INITIAL_STATE_kStartBEvt.dest_state);
+  EXPECT_EQ(&Client1::DoStartB, trans_INITIAL_STATE_kStartBEvt.action);
+
+  const TransitionData<ClientState_t, ClientAction_t>&
+      trans_INITIAL_STATE_kEndEvt =
+          TransitionsArray_INITIAL_STATE.GetTransitionData(Client1::kEndEvt);
+
+  EXPECT_EQ(InvalidState<ClientState_t>::value,
+            trans_INITIAL_STATE_kEndEvt.dest_state);
+  EXPECT_EQ(nullptr, trans_INITIAL_STATE_kEndEvt.action);
+}
