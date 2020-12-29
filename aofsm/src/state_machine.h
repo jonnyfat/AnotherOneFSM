@@ -92,7 +92,7 @@ class StateMachine {
  public:
   // Pointer auf Member-Methode des Clients, welche bei einer Transition als
   // Action aufgerufen wird.
-  using Action_t = void (Client::*)(ActionParameterTypes...);
+  using ActionStep_t = void (Client::*)(ActionParameterTypes...);
 
   // Pointer auf Member-Methode des Clients, welche bei einer Guarded-Transition
   // als Guard dient.
@@ -101,13 +101,14 @@ class StateMachine {
   // Bei true wird 1. Transition ausgeführt, bei false die 2.
   using Guard_t = bool (Client::*)(ActionParameterTypes...) const;
 
-  using Context_t = StateMachineContext<Client, State, Event, Action_t, Guard_t,
-                                        State::kStateCount, Event::kEventCount>;
-
   // Fasst Zeiger auf mehrere Member-Methoden des Clients, welche bei einer
   // Transition aufgerufen werden.
   using ArrayOfActions_t =
-      internal::ArrayOfActions<MAX_ACTIONS_PER_TRANSITION, Action_t>;
+      internal::ArrayOfActions<MAX_ACTIONS_PER_TRANSITION, ActionStep_t>;
+
+  using Context_t =
+      StateMachineContext<Client, State, Event, ArrayOfActions_t, Guard_t,
+                          State::kStateCount, Event::kEventCount>;
 
   using StateMachineDescription_t = StateMachineDescription<Context_t>;
 
