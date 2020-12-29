@@ -6,36 +6,40 @@
 namespace aofsm {
 
 // Struktur für Transitionen einer State-Machine
-template <typename State_t, typename Event_t, typename Guard_t,
-          typename Action_t, State_t kInvalidStateId>
+template <typename Context>
 struct Transition {
-  // Um Konfiguration von State-Machine zu vereinfachen werden alle Transitionen
-  // als eine Datenstruktur von Typ Transition definiert.
-  // Mit TransitionType, wird die Art der Transition vermerkt.
+  using State_t = typename Context::State_t;
+  using Event_t = typename Context::Event_t;
+  using Action_t = typename Context::Action_t;
+  using Guard_t = typename Context::Guard_t;
+
+  // Um Konfiguration von State-Machine zu vereinfachen werden alle
+  // Transitionen als eine Datenstruktur von Typ Transition definiert. Mit
+  // TransitionType, wird die Art der Transition vermerkt.
   enum class TransitionType {
-    kDefaultAction,  ///< Default-Aktion für ein Event in beliebigen Zustand.
-                     ///< Nur das Event und action sind angegeben.
-                     ///< Gilt für alle Zustände in welchen für das Event keine
-                     ///< Default-Transitionen und keine Transition festgelegt
-                     ///< sind.
+    kDefaultAction,  ///< Default-Aktion für ein Event in beliebigen
+                     ///< Zustand. Nur das Event und action sind angegeben.
+                     ///< Gilt für alle Zustände in welchen für das Event
+                     ///< keine Default-Transitionen und keine Transition
+                     ///< festgelegt sind.
 
-    kDefaultTransition,  ///< Default-Transition für ein Event aus beliebigen
-                         ///< Zustand fürhrt in einen anderen Zustand.
-                         ///< Nur Event, Zielzustand und action sind angegeben.
-                         ///< Gilt für alle Zustände in welchen für das Event
-                         ///< keine Transition festgelegt ist.
+    kDefaultTransition,  ///< Default-Transition für ein Event aus
+                         ///< beliebigen Zustand fürhrt in einen anderen
+                         ///< Zustand. Nur Event, Zielzustand und action
+                         ///< sind angegeben. Gilt für alle Zustände in
+                         ///< welchen für das Event keine Transition
+                         ///< festgelegt ist.
 
-    kTransition,  ///< Transition für ein Event in einem Zustand führt in einen
-                  ///< anderen Zustand.
-                  ///< Gilt für alle Zustände für welche keine
-                  ///< ConditionalTransition festgelegt ist.
+    kTransition,  ///< Transition für ein Event in einem Zustand führt in
+                  ///< einen anderen Zustand. Gilt für alle Zustände für
+                  ///< welche keine ConditionalTransition festgelegt ist.
 
     kConditionalTransition  ///< Bedingte Transition für ein Event in einem
                             ///< Zustand.
                             ///< Enthält ein Guard und zwei Transitionen.
-                            ///< Bei Triggerung wird der Guard aufgerufen und je
-                            ///< nach Rückgabewert wird entweder eine oder
-                            ///< andere Transaktion durchgeführt.
+                            ///< Bei Triggerung wird der Guard aufgerufen
+                            ///< und je nach Rückgabewert wird entweder eine
+                            ///< oder andere Transaktion durchgeführt.
   };
 
   const TransitionType transition_type;
@@ -59,26 +63,26 @@ struct Transition {
   // Default-Transition und kein Transition für das Event parametriert ist.
   Transition(Event_t event, const Action_t& action)
       : transition_type{TransitionType::kDefaultAction},
-        src_state{kInvalidStateId},         ///<  ungültig
-        event{event},                       ///< gültig
-        guard_action{nullptr},              ///<  kein Guard
-        trans1_dst_state{kInvalidStateId},  ///<  ungültig
-        trans1_action{action},              ///< gültig
-        trans2_dst_state{kInvalidStateId},  ///<  ungültig
-        trans2_action{} {}                  ///<  leer
+        src_state{Context::kInvalidStateId},         ///<  ungültig
+        event{event},                                ///< gültig
+        guard_action{nullptr},                       ///<  kein Guard
+        trans1_dst_state{Context::kInvalidStateId},  ///<  ungültig
+        trans1_action{action},                       ///< gültig
+        trans2_dst_state{Context::kInvalidStateId},  ///<  ungültig
+        trans2_action{} {}                           ///<  leer
 
   // Konstruktor für Parametrierung einer Default-Transition für ein Event der
   // State-Machine. Es gilt für alle Zustände der Machine für welche keine
   // Transition für das Event parametriert ist.
   Transition(Event_t event, State_t dst_state, const Action_t& action)
       : transition_type{TransitionType::kDefaultTransition},
-        src_state{kInvalidStateId},         ///<  ungültig
-        event{event},                       ///< gültig
-        guard_action{nullptr},              ///<  kein Guard
-        trans1_dst_state{dst_state},        ///< gültig
-        trans1_action{action},              ///< gültig
-        trans2_dst_state{kInvalidStateId},  ///<  ungültig
-        trans2_action{} {}                  ///<  leer
+        src_state{Context::kInvalidStateId},         ///<  ungültig
+        event{event},                                ///< gültig
+        guard_action{nullptr},                       ///<  kein Guard
+        trans1_dst_state{dst_state},                 ///< gültig
+        trans1_action{action},                       ///< gültig
+        trans2_dst_state{Context::kInvalidStateId},  ///<  ungültig
+        trans2_action{} {}                           ///<  leer
 
   // Konstruktor für Parametrierung einer unbedingten Transition für ein Event
   // in einem Zustand.
@@ -90,7 +94,7 @@ struct Transition {
         guard_action{nullptr},
         trans1_dst_state{dst_state},
         trans1_action{action},
-        trans2_dst_state{kInvalidStateId},
+        trans2_dst_state{Context::kInvalidStateId},
         trans2_action{} {}
 
   // Konstruktor für Parametrierung einer bedingten Transition für ein Event

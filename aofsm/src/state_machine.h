@@ -6,6 +6,7 @@
 #include <cstddef>
 
 #include "aofsm/src/array_of_actions.h"
+#include "aofsm/src/state_machine_context.h"
 #include "aofsm/src/state_machine_description.h"
 #include "aofsm/src/transition.h"
 
@@ -70,78 +71,80 @@ using std::size_t;
 //  - Transitionen (StateMachineDescription)
 //
 // Template-Parameter:
-//  - Client_t - Client-Class
-//  - State_t - Enumeration für Zustände.
-//      - State_t  muss Anzahl der Zustände als enum-Element kStateCount
+//  - Client - Client-Class
+//  - State - Enumeration für Zustände.
+//      - State  muss Anzahl der Zustände als enum-Element kStateCount
 //        enthalten.
-//      - State_t  muss Id von Initalzustand als enum-Element INITIAL_STATE
+//      - State  muss Id von Initalzustand als enum-Element INITIAL_STATE
 //        enthalten.
-//  - Event_t - Enumeration für Events.
-//      - Event_t muss Anzahl der Events als enum-Element kEventCount
+//  - Event - Enumeration für Events.
+//      - Event muss Anzahl der Events als enum-Element kEventCount
 //        enthalten.
 //  - MAX_ACTIONS_PER_TRANSITION - Maximale Anzahl von Actions pro Transition
 //  - ActionParameterTypes - template parameter pack :  Signatur von
 //    Action-Methoden. Wenn leer dann sind Action-Methoden void(void)
 //
-template <typename Client_t, typename State_t = typename Client_t::State,
-          typename Event_t = typename Client_t::Event,
+template <typename Client, typename State = typename Client::State,
+          typename Event = typename Client::Event,
           size_t MAX_ACTIONS_PER_TRANSITION = 1,
           typename... ActionParameterTypes>
 class StateMachine {
  public:
   // Pointer auf Member-Methode des Clients, welche bei einer Transition als
   // Action aufgerufen wird.
-  using Action_t = void (Client_t::*)(ActionParameterTypes...);
+  using Action_t = void (Client::*)(ActionParameterTypes...);
 
   // Pointer auf Member-Methode des Clients, welche bei einer Guarded-Transition
   // als Guard dient.
   // Der Rückgabewert von Guard bestimmt, welche von zwei möglichen Transitionen
   // stattfinden soll.
   // Bei true wird 1. Transition ausgeführt, bei false die 2.
-  using Guard_t = bool (Client_t::*)(ActionParameterTypes...) const;
+  using Guard_t = bool (Client::*)(ActionParameterTypes...) const;
+
+  using Context_t = StateMachineContext<Client, State, Event, Action_t, Guard_t,
+                                        State::kStateCount, Event::kEventCount>;
 
   // Fasst Zeiger auf mehrere Member-Methoden des Clients, welche bei einer
   // Transition aufgerufen werden.
   using ArrayOfActions_t =
       internal::ArrayOfActions<MAX_ACTIONS_PER_TRANSITION, Action_t>;
 
-  using StateMachineDescription_t =
-      StateMachineDescription<State_t, Event_t, ArrayOfActions_t, Guard_t>;
+  using StateMachineDescription_t = StateMachineDescription<Context_t>;
 
   using EventTransition_t = typename StateMachineDescription_t::EventTransition;
 
   // Konstruktor: Initialisierung der State-Machine nur mit der
   // Transition-Konfiguration
-  StateMachine(Client_t* client, const StateMachineDescription_t& description);
+  StateMachine(Client* client, const StateMachineDescription_t& description);
 
   virtual ~StateMachine() = default;
 
-  void Trigger(Event_t event, ActionParameterTypes... params);
+  void Trigger(Event event, ActionParameterTypes... params);
 
-  void SetCurrentState(State_t state);
+  void SetCurrentState(State state);
 
  private:
-  Client_t* client_{nullptr};
+  Client* client_{nullptr};
 
   const StateMachineDescription_t& description_;
 
-  State_t current_state_{State_t::INITIAL_STATE};
+  State current_state_{State::INITIAL_STATE};
 };
 
-template <typename Client_t, typename State_t, typename Event_t,
+template <typename Client, typename State, typename Event,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
+StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
              ActionParameterTypes...>::
-    StateMachine(Client_t* client, const StateMachineDescription_t& description)
+    StateMachine(Client* client, const StateMachineDescription_t& description)
     : client_{client}, description_{description} {}
 
-template <typename Client_t, typename State_t, typename Event_t,
+template <typename Client, typename State, typename Event,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 void StateMachine<
-    Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-    ActionParameterTypes...>::Trigger(Event_t event,
+    Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
+    ActionParameterTypes...>::Trigger(Event event,
                                       ActionParameterTypes... params) {
-  if (current_state_ < State_t::kStateCount && event < Event_t::kEventCount) {
+  if (current_state_ < State::kStateCount && event < Event::kEventCount) {
     // Transaction in aktuellem Zustand für den aktuellen Event.
     const EventTransition_t& current_transition =
         description_.GetTransition(current_state_, event);
@@ -164,10 +167,10 @@ void StateMachine<
   }
 }
 
-template <typename Client_t, typename State_t, typename Event_t,
+template <typename Client, typename State, typename Event,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<Client_t, State_t, Event_t, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::SetCurrentState(State_t state) {
+void StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
+                  ActionParameterTypes...>::SetCurrentState(State state) {
   current_state_ = state;
 }
 

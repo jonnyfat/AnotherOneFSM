@@ -138,17 +138,17 @@ using std::size_t;
 //
 //
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
+template <typename Context>
 class StateMachineDescription {
  public:
-  // Konstante für ungültiger StateId
-  static constexpr State_t kInvalidStateId = State_t::kStateCount;
+  using State_t = typename Context::State_t;
+  using Event_t = typename Context::Event_t;
+  using Action_t = typename Context::Action_t;
+  using Guard_t = typename Context::Guard_t;
 
   // Konfigurationselement für Transitionen
   // Wird benutzt um die Transitionen von State-Machine zu parametrieren.
-  using Transition_t =
-      Transition<State_t, Event_t, Guard_t, Action_t, kInvalidStateId>;
+  using Transition_t = Transition<Context>;
 
   // Daten-Struktur für Interne-Speicherung für jedes {Source-State,Event}-Paar.
   struct EventTransition {
@@ -216,7 +216,7 @@ class StateMachineDescription {
   struct StateTransitions {
     bool has_substates_{false};
 
-    State_t parent_state{kInvalidStateId};
+    State_t parent_state{Context::kInvalidStateId};
 
     Action_t on_entry_action;
 
@@ -228,35 +228,25 @@ class StateMachineDescription {
   StateTransitions state_transitions_[State_t::kStateCount];
 };
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-constexpr State_t StateMachineDescription<State_t, Event_t, Action_t,
-                                          Guard_t>::kInvalidStateId;
-
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
+template <typename Context>
 template <size_t TRANSITION_COUNT>
-StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    StateMachineDescription(
-        const TransitionArray<TRANSITION_COUNT>& transitions) {
+StateMachineDescription<Context>::StateMachineDescription(
+    const TransitionArray<TRANSITION_COUNT>& transitions) {
   SetupTransitions(transitions, TRANSITION_COUNT);
 }
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
+template <typename Context>
 template <size_t TRANSITION_COUNT, size_t STATE_INFO_COUNT>
-StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    StateMachineDescription(
-        const TransitionArray<TRANSITION_COUNT>& transitions,
-        const StateInfoArray<STATE_INFO_COUNT>& state_infos) {
+StateMachineDescription<Context>::StateMachineDescription(
+    const TransitionArray<TRANSITION_COUNT>& transitions,
+    const StateInfoArray<STATE_INFO_COUNT>& state_infos) {
   SetupTransitions(transitions, TRANSITION_COUNT);
   SetupStates(state_infos, STATE_INFO_COUNT);
 }
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    SetupTransitions(const Transition_t* transitions, size_t transition_count) {
+template <typename Context>
+void StateMachineDescription<Context>::SetupTransitions(
+    const Transition_t* transitions, size_t transition_count) {
   auto end = transitions + transition_count;
   for (auto transition = transitions; transition != end; ++transition) {
     switch (transition->transition_type) {
@@ -276,9 +266,8 @@ void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
   }
 }
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::SetupStates(
+template <typename Context>
+void StateMachineDescription<Context>::SetupStates(
     const StateInfo_t* state_infos, size_t state_info_count) {
   auto end = state_infos + state_info_count;
   for (auto state_info = state_infos; state_info != end; ++state_info) {
@@ -290,10 +279,9 @@ void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::SetupStates(
   }
 }
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    SetupDefaultAction(const Transition_t& transition) {
+template <typename Context>
+void StateMachineDescription<Context>::SetupDefaultAction(
+    const Transition_t& transition) {
   auto event = transition.event;
 
   for (auto state : state_transitions_) {
@@ -302,46 +290,37 @@ void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
   }
 }
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    SetupDefaultAction(EventTransition* event_transition,
-                       const Action_t& actions) {
+template <typename Context>
+void StateMachineDescription<Context>::SetupDefaultAction(
+    EventTransition* event_transition, const Action_t& actions) {
   event_transition->guard_action = nullptr;
-  event_transition->trans1_dst_state = kInvalidStateId;
+  event_transition->trans1_dst_state = Context::kInvalidStateId;
   event_transition->trans1_actions = actions;
-  event_transition->trans2_dst_state = kInvalidStateId;
+  event_transition->trans2_dst_state = Context::kInvalidStateId;
   event_transition->trans2_actions.SetEmpty();
 }
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    SetupDefaultTransition(const Transition_t& transition) {}
+template <typename Context>
+void StateMachineDescription<Context>::SetupDefaultTransition(
+    const Transition_t& transition) {}
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    SetupTransition(const Transition_t& transition) {}
+template <typename Context>
+void StateMachineDescription<Context>::SetupTransition(
+    const Transition_t& transition) {}
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::
-    SetupConditionalTransition(const Transition_t& transition) {}
+template <typename Context>
+void StateMachineDescription<Context>::SetupConditionalTransition(
+    const Transition_t& transition) {}
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-void StateMachineDescription<State_t, Event_t, Action_t,
-                             Guard_t>::SetupSubStates(State_t state,
+template <typename Context>
+void StateMachineDescription<Context>::SetupSubStates(State_t state,
                                                       const State_t* substates,
                                                       size_t substates_count) {}
 
-template <typename State_t, typename Event_t, typename Action_t,
-          typename Guard_t>
-const typename StateMachineDescription<State_t, Event_t, Action_t,
-                                       Guard_t>::EventTransition&
-StateMachineDescription<State_t, Event_t, Action_t, Guard_t>::GetTransition(
-    State_t src_state, Event_t event) const {
+template <typename Context>
+const typename StateMachineDescription<Context>::EventTransition&
+StateMachineDescription<Context>::GetTransition(State_t src_state,
+                                                Event_t event) const {
   return state_transitions_[src_state].event_transitions[event];
 }
 
