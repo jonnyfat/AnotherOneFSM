@@ -30,44 +30,6 @@ using aofsm::TransitionDescription;
 
 using aofsm::internal::StatesList;
 
-//---------------------------------------
-// ArrayHolderConstexpr
-template <typename T, T... args>
-struct ArrayHolderConstexpr {
-  static constexpr T data[sizeof...(args)] = {args...};
-};
-
-template <typename T, T... args>
-constexpr T ArrayHolderConstexpr<T, args...>::data[sizeof...(args)];
-
-//---------------------------------------
-// ArrayHolder2Constexpr
-template <typename EntryType, typename... EntryInitTypes>
-struct ArrayHolder2Constexpr {
-  static constexpr EntryType data[sizeof...(EntryInitTypes)] = {
-      EntryInitTypes::value...};
-};
-
-template <typename EntryType, typename... EntryInitTypes>
-constexpr EntryType ArrayHolder2Constexpr<
-    EntryType, EntryInitTypes...>::data[sizeof...(EntryInitTypes)];
-
-//---------------------------------------
-// ArrayHolderConst
-template <typename T, T... args>
-struct ArrayHolderConst {
-  static const T data[sizeof...(args)];
-};
-
-template <typename T, T... args>
-const T ArrayHolderConst<T, args...>::data[sizeof...(args)] = {args...};
-
-template <typename State, typename Action, size_t EVENT_COUNT>
-struct StateTransitionData {
-  State dest_states[EVENT_COUNT];
-  Action actions[EVENT_COUNT];
-};
-
 template <typename State, typename Event, typename Action>
 class StateMachineDescription {
  public:
@@ -186,18 +148,26 @@ class Client1 {
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 };
 
-#define DEF_TRANS(FSM_DESCR, SRC_STATE, EVENT, DST_STATE, ACTION)              \
-  template <>                                                                  \
-  struct aofsm::TransitionDescription<                                         \
-      FSM_DESCR::State_t, FSM_DESCR::Event_t, FSM_DESCR::Action_t,             \
-      FSM_DESCR::State_t::SRC_STATE, FSM_DESCR::Event_t::EVENT> {              \
-    static constexpr TransitionData<FSM_DESCR::State_t, FSM_DESCR ::Action_t>  \
-        transition_data = {FSM_DESCR::State_t::DST_STATE,                      \
-                           &FSM_DESCR::Client_t::ACTION};                      \
-    static constexpr TransitionData<FSM_DESCR::State_t, FSM_DESCR ::Action_t>  \
-        value = {FSM_DESCR::State_t::DST_STATE, &FSM_DESCR::Client_t::ACTION}; \
+#define DEF_TRANS(FSM_DESCR, SRC_STATE, EVENT, DST_STATE, ACTION)             \
+  template <>                                                                 \
+  struct aofsm::TransitionDescription<                                        \
+      FSM_DESCR::State_t, FSM_DESCR::Event_t, FSM_DESCR::Action_t,            \
+      FSM_DESCR::State_t::SRC_STATE, FSM_DESCR::Event_t::EVENT> {             \
+    static constexpr TransitionData<FSM_DESCR::State_t, FSM_DESCR ::Action_t> \
+        transition_data = {FSM_DESCR::State_t::DST_STATE,                     \
+                           &FSM_DESCR::Client_t::ACTION};                     \
   };
 
+using ClientState_t = Client1::StateMachine_t::State_t;
+
+using ClientEvent_t = Client1::StateMachine_t::Event_t;
+
+using ClientAction_t = Client1::StateMachine_t::Action_t;
+
+using TransitionData_t = Client1::StateMachine_t::TransitionData_t;
+
+//----------------------------------------------------------------------------------
+//   DEF_TRANS
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE, DoStartA)
 
 DEF_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE, DoStartB)
@@ -286,49 +256,28 @@ TEST(aofsm_StateMachine, StateMachineDescription_RunTime) {
   EXPECT_EQ(transition_data4.action, &Client1::DoEndB);
 }
 
-using ClientState_t = Client1::StateMachine_t::State_t;
-using ClientEvent_t = Client1::StateMachine_t::Event_t;
-using ClientAction_t = Client1::StateMachine_t::Action_t;
-
-ArrayHolderConstexpr<ClientState_t> empty_state_array;
-
-ArrayHolderConstexpr<ClientState_t, Client1::INITIAL_STATE> one_el_state_array;
-
-template <typename State, typename Event, typename Action, size_t index>
-struct GetDestState {
-  static constexpr size_t event_index = index % Event::kEventCount;
-  static constexpr size_t state_index =
-      (index - event_index) / Event::kEventCount;
-
-  static constexpr State value =
-      TransitionDescription<
-          State, Event, Action, static_cast<State>(state_index),
-          static_cast<Event>(event_index)>::transition_data.dest_state;
+//---------------------------------------
+// TransitionDataArrayHolderConstexpr
+template <typename TransitionData, typename... TransitionDescriptions>
+struct TransitionDataArrayHolderConstexpr {
+  static constexpr TransitionData data[sizeof...(TransitionDescriptions)] = {
+      TransitionDescriptions::transition_data...};
 };
 
-template <typename State, typename Event, State state, Event event>
-struct GetIndex {
-  static constexpr size_t value = state * Event::kEventCount + event;
-};
-
-TEST(aofsm_StateMachine, GetDestState) {
-  auto dest_state = GetDestState<
-      ClientState_t, ClientEvent_t, ClientAction_t,
-      GetIndex<ClientState_t, ClientEvent_t, Client1::INITIAL_STATE,
-               Client1::kStartAEvt>::value>::value;
-  EXPECT_EQ(Client1::A_STATE, dest_state);
-}
-
-using TransitionData_t = Client1::StateMachine_t::TransitionData_t;
+template <typename TransitionData, typename... TransitionDescriptions>
+constexpr TransitionData TransitionDataArrayHolderConstexpr<
+    TransitionData,
+    TransitionDescriptions...>::data[sizeof...(TransitionDescriptions)];
 
 template <ClientState_t src_state, ClientEvent_t event>
 using TransitionDescription_t =
     Client1::StateMachine_t::StateMachineDescription_t::TransitionDescription_t<
         src_state, event>;
 
-ArrayHolder2Constexpr<TransitionData_t> empty_transition_data_array;
+TransitionDataArrayHolderConstexpr<TransitionData_t>
+    empty_transition_data_array;
 
-ArrayHolder2Constexpr<
+TransitionDataArrayHolderConstexpr<
     TransitionData_t,
     TransitionDescription_t<Client1::INITIAL_STATE, Client1::kStartAEvt> >
     one_el_transition_data_array;
