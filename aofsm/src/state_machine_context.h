@@ -2,6 +2,8 @@
 #ifndef AOFSM_SRC_STATE_MACHINE_CONTEXT_H_
 #define AOFSM_SRC_STATE_MACHINE_CONTEXT_H_
 
+#include "aofsm/src/transition_data.h"
+
 namespace aofsm {
 
 template <typename Client, typename State, typename Event, typename Action,
@@ -20,6 +22,14 @@ struct StateMachineContext {
 
   // Konstante für ungültiger StateId
   static constexpr State kInvalidStateId = State::kStateCount;
+
+  using TransitionData_t = TransitionData<StateMachineContext>;
+
+  using StateTransitionArray_t = TransitionData_t[kEventCount];
+
+  using StateTransitionArrayPtr_t = StateTransitionArray_t*;
+
+  using TransitionMatrix_t = StateTransitionArrayPtr_t[kStateCount];
 };
 
 }  // namespace aofsm
