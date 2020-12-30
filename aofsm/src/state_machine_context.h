@@ -27,7 +27,7 @@ struct StateMachineContext {
 
   using StateTransitionArray_t = TransitionData_t[kEventCount];
 
-  using StateTransitionArrayPtr_t = StateTransitionArray_t*;
+  using StateTransitionArrayPtr_t = StateTransitionArray_t const *;
 
   using TransitionMatrix_t = StateTransitionArrayPtr_t[kStateCount];
 };
