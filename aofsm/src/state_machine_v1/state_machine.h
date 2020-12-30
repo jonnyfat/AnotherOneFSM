@@ -1,16 +1,17 @@
 // copyright Yevgen
 
-#ifndef AOFSM_SRC_STATE_MACHINE_H_
-#define AOFSM_SRC_STATE_MACHINE_H_
+#ifndef AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_H_
+#define AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_H_
 
 #include <cstddef>
 
 #include "aofsm/src/array_of_actions.h"
 #include "aofsm/src/state_machine_context.h"
-#include "aofsm/src/state_machine_description.h"
+#include "aofsm/src/state_machine_v1/state_machine_description.h"
 #include "aofsm/src/transition.h"
 
 namespace aofsm {
+namespace v1 {
 
 using std::size_t;
 
@@ -174,7 +175,7 @@ void StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
                   ActionParameterTypes...>::SetCurrentState(State state) {
   current_state_ = state;
 }
-
+}  // namespace v1
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_STATE_MACHINE_H_
+#endif  // AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_H_

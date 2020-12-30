@@ -60,7 +60,7 @@ class SimlpeClient2 {
   void DoEndB(Data*) {}
 
   using StateMachine_t =
-      aofsm::StateMachineWithCustomActions<SimlpeClient2, 2, Data*>;
+      aofsm::v1::StateMachineWithCustomActions<SimlpeClient2, 2, Data*>;
 
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 

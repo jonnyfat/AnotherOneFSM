@@ -7,7 +7,7 @@
 
 using std::size_t;
 
-#include "aofsm/src/state_machine.h"
+#include "aofsm/src/state_machine_v1/state_machine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -56,9 +56,9 @@ class SimlpeClient1 {
   void DoEndA() {}
   void DoEndB() {}
 
-  friend class aofsm::StateMachine<SimlpeClient1>;
+  friend class aofsm::v1::StateMachine<SimlpeClient1>;
 
-  using StateMachine_t = aofsm::StateMachine<SimlpeClient1>;
+  using StateMachine_t = aofsm::v1::StateMachine<SimlpeClient1>;
 
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 

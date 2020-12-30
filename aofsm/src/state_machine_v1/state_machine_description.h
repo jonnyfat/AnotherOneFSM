@@ -12,6 +12,7 @@
 #include "aofsm/src/transition_description.h"
 
 namespace aofsm {
+namespace v1 {
 
 using std::size_t;
 
@@ -324,6 +325,7 @@ StateMachineDescription<Context>::GetTransition(State_t src_state,
   return state_transitions_[src_state].event_transitions[event];
 }
 
+}  // namespace v1
 }  // namespace aofsm
 
 #endif  // AOFSM_SRC_STATE_MACHINE_DESCRIPTION_H_
