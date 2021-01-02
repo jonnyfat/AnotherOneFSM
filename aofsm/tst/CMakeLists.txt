@@ -7,6 +7,7 @@ add_executable(aofsm_tst
 #               state_machine_06_default_transition_tst.cpp
 #               state_machine_09_all_features_tst.cpp 
                transition_map_template_tst.cpp
+               state_machine_matrix_initialisation_tst.cpp
             )
            
 target_link_libraries(aofsm_tst PUBLIC gmock_main
