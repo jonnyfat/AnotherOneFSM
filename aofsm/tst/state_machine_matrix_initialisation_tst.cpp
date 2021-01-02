@@ -15,6 +15,11 @@ struct Transition {
   size_t data[N];
 };
 
+template <size_t Event>
+struct TransitionInitValue {
+  static constexpr size_t value = Event;
+};
+
 template <template <typename...> typename StateList,
           template <typename...> typename EventList, typename... States,
           typename... Events>
@@ -25,7 +30,8 @@ struct Dummy<StateList<States...>, EventList<Events...>> {
   };
 
   static constexpr Transition<sizeof...(Events)>
-      transitions[sizeof...(States)] = {{States::value, {Events::value...}}...};
+      transitions[sizeof...(States)] = {
+          {States::value, {TransitionInitValue<Events::value>::value...}}...};
 };
 
 template <template <typename...> typename StateList,
