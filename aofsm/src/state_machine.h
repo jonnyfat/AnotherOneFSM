@@ -1,10 +1,10 @@
 // Copyright Yevgen
-#ifndef AOFSM_SRC_STATE_MACHINE_V2_STATE_MACHINE_H_
-#define AOFSM_SRC_STATE_MACHINE_V2_STATE_MACHINE_H_
+#ifndef AOFSM_SRC_STATE_MACHINE_H_
+#define AOFSM_SRC_STATE_MACHINE_H_
 
 #include "aofsm/src/state_machine_context.h"
 
-#include "aofsm/src/state_machine_v2/state_machine_description.h"
+#include "aofsm/src/state_machine_description.h"
 
 namespace aofsm {
 
@@ -39,4 +39,4 @@ class StateMachine {
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_STATE_MACHINE_V2_STATE_MACHINE_H_
+#endif  // AOFSM_SRC_STATE_MACHINE_H_

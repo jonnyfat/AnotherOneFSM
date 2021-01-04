@@ -31,7 +31,7 @@
 //         B_STATE -> FINAL_STATE
 //              kEndEvt/DoEndB
 //
-class ClientV2 {
+class Client1 {
  public:
   //  void StartA() { state_machine.Trigger(kStartAEvt); }
   //
@@ -47,21 +47,21 @@ class ClientV2 {
   void DoEndA() {}
   void DoEndB() {}
 
-  using StateMachine_t = aofsm::StateMachine<ClientV2>;
+  using StateMachine_t = aofsm::StateMachine<Client1>;
 
   StateMachine_t state_machine;
 };
 
 //----------------------------------------------------------------------------------
 //   DEF_TRANS
-DECL_TRANS(ClientV2::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE,
+DECL_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE,
            DoStartA)
 
-DECL_TRANS(ClientV2::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE,
+DECL_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE,
            DoStartB)
 
-DECL_TRANS(ClientV2::StateMachine_t, A_STATE, kEndEvt, FINAL_STATE, DoEndA)
+DECL_TRANS(Client1::StateMachine_t, A_STATE, kEndEvt, FINAL_STATE, DoEndA)
 
-DECL_TRANS(ClientV2::StateMachine_t, B_STATE, kEndEvt, FINAL_STATE, DoEndB)
+DECL_TRANS(Client1::StateMachine_t, B_STATE, kEndEvt, FINAL_STATE, DoEndB)
 
 #endif  // AOFSM_TST_CLIENT_V2_H_

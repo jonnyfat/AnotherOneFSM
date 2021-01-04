@@ -1,77 +1,41 @@
 // copyright Yevgen
 //
-// Einfachte Parametrierung:
-// - nur einfachte Transitionen mit einem Action
-
 #include "aofsm/src/std_types.h"
 
-
-
-#include "aofsm/src/state_machine_v1/state_machine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-// state machine
-// clang-format off
-//  [INITIAL_STATE]+->(StartAEvt -> [A_STATE] -> (EndEvt  +-> [FINAL_STATE]
-//                 |   \DoStartA)                 \DoEndA)|
-//                 |                                      |
-//                 +->(StartBEvt -> [B_STATE] -> (EndEvt  +
-//                      \DoStartB)                \DoEndB)
-// clang-format on
-//   states :
-//            INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE
-//   events :
-//            kStartAEvt, kStartBEvt, kEndEvt
-//   actions :
-//             DoStartA, DoStartB, DoEndA, DoEndB,
-//   transitions:
-//         INITIAL_STATE -> A_STATE
-//            kStartAEvt/DoStartA
-//
-//         INITIAL_STATE -> B_STATE
-//            kStartBEvt/DoStartB
-//
-//         A_STATE -> FINAL_STATE
-//              kEndEvt/DoEndA
-//
-//         B_STATE -> FINAL_STATE
-//              kEndEvt/DoEndB
-//
+#include "client1.h"
 
-class SimlpeClient1 {
- public:
-  void StartA() { state_machine_.Trigger(kStartAEvt); }
+TEST(aofsm_StateMachineDescription_V2, GetTransitionData_INITIAL_STATE) {
+  using Client1Context_t = Client1::StateMachine_t::Context_t;
 
-  void StartB() { state_machine_.Trigger(kStartBEvt); }
+  using Client1StateMachineDescription_t =
+      Client1::StateMachine_t::StateMachineDescription_t;
 
-  void End() { state_machine_.Trigger(kEndEvt); }
+  using TransitionData_t = Client1::StateMachine_t::TransitionData_t;
 
- private:
-  enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
-  enum Event { kStartAEvt, kStartBEvt, kEndEvt, kEventCount };
+  Client1StateMachineDescription_t client_state_machine_description;
 
-  void DoStartA() {}
-  void DoStartB() {}
-  void DoEndA() {}
-  void DoEndB() {}
+  const auto& trans_INITIAL_STATE_kStartAEvt =
+      client_state_machine_description.GetTransitionData(
+          Client1::INITIAL_STATE, Client1::kStartAEvt);
 
-  friend class aofsm::v1::StateMachine<SimlpeClient1>;
+  EXPECT_EQ(Client1::A_STATE, trans_INITIAL_STATE_kStartAEvt.dest_state);
+  EXPECT_EQ(&Client1::DoStartA, trans_INITIAL_STATE_kStartAEvt.action);
 
-  using StateMachine_t = aofsm::v1::StateMachine<SimlpeClient1>;
+  const auto& trans_INITIAL_STATE_kStartBEvt =
+      client_state_machine_description.GetTransitionData(
+          Client1::INITIAL_STATE, Client1::kStartBEvt);
 
-  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
+  EXPECT_EQ(Client1::B_STATE, trans_INITIAL_STATE_kStartBEvt.dest_state);
+  EXPECT_EQ(&Client1::DoStartB, trans_INITIAL_STATE_kStartBEvt.action);
 
-  static StateMachineDescription_t state_machine_description_;
+  const auto& trans_INITIAL_STATE_kEndEvt =
+      client_state_machine_description.GetTransitionData(
+          Client1::INITIAL_STATE, Client1::kEndEvt);
 
-  StateMachine_t state_machine_{this, state_machine_description_};
-};
-
-SimlpeClient1::StateMachineDescription_t
-    SimlpeClient1::state_machine_description_{
-        {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
-         {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
-         {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
-         {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
-
-TEST(aofsm_StateMachine, trigger) { SimlpeClient1 simple_client; }
+  EXPECT_FALSE(Client1::StateMachine_t::IsValidState(
+      trans_INITIAL_STATE_kEndEvt.dest_state));
+  EXPECT_EQ(nullptr, trans_INITIAL_STATE_kEndEvt.action);
+}

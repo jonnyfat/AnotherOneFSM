@@ -4,7 +4,7 @@
 
 #include "aofsm/src/transition_description.h"
 
-#include "aofsm/src/state_machine_v2/state_machine.h"
+#include "aofsm/src/state_machine.h"
 
 #include "aofsm/src/def_trans.h"
 

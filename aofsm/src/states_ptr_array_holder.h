@@ -6,8 +6,6 @@
 
 namespace aofsm {
 
-
-
 //-----------------------
 // StatesPtrArrayHolder
 // - Instantiiert ein Context::StateTransitionArrayPtr_t-Array.

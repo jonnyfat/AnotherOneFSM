@@ -2,6 +2,8 @@
 #ifndef AOFSM_SRC_STATE_MACHINE_CONTEXT_H_
 #define AOFSM_SRC_STATE_MACHINE_CONTEXT_H_
 
+#include "aofsm/src/std_types.h"
+
 #include "aofsm/src/transition_data.h"
 
 namespace aofsm {
