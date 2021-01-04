@@ -54,14 +54,14 @@ class ClientV2 {
 
 //----------------------------------------------------------------------------------
 //   DEF_TRANS
-DEF_TRANS(ClientV2::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE,
-          DoStartA)
+DECL_TRANS(ClientV2::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE,
+           DoStartA)
 
-DEF_TRANS(ClientV2::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE,
-          DoStartB)
+DECL_TRANS(ClientV2::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE,
+           DoStartB)
 
-DEF_TRANS(ClientV2::StateMachine_t, A_STATE, kEndEvt, FINAL_STATE, DoEndA)
+DECL_TRANS(ClientV2::StateMachine_t, A_STATE, kEndEvt, FINAL_STATE, DoEndA)
 
-DEF_TRANS(ClientV2::StateMachine_t, B_STATE, kEndEvt, FINAL_STATE, DoEndB)
+DECL_TRANS(ClientV2::StateMachine_t, B_STATE, kEndEvt, FINAL_STATE, DoEndB)
 
 #endif  // AOFSM_TST_CLIENT_V2_H_
