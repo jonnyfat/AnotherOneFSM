@@ -3,7 +3,7 @@
 #ifndef AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_H_
 #define AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_H_
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
 #include "aofsm/src/array_of_actions.h"
 #include "aofsm/src/state_machine_context.h"
@@ -12,8 +12,6 @@
 
 namespace aofsm {
 namespace v1 {
-
-using std::size_t;
 
 // Die Klasse StateMachine erlaubt es einem Client-Class die eigenen Methoden
 // Zustands- und Erreignis-abhängig aufzurufen.

@@ -1,7 +1,7 @@
 // Copyright Yevgen
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
-using std::size_t;
+
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

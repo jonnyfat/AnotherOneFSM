@@ -2,12 +2,12 @@
 #ifndef AOFSM_SRC_ARRAY_OF_ACTIONS_H_
 #define AOFSM_SRC_ARRAY_OF_ACTIONS_H_
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
 namespace aofsm {
 namespace internal {
 
-using std::size_t;
+
 
 // Es muss struct sein
 template <size_t MAX_ACTIONS_PER_TRANSITION, typename Action_t>

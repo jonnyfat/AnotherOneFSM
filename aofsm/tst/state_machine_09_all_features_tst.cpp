@@ -3,9 +3,9 @@
 // Alle State-Machine Parametrierungsmöglichkeiten in einem Client.
 //
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
-using std::size_t;
+
 
 #include "aofsm/src/state_machine.h"
 #include "gmock/gmock.h"

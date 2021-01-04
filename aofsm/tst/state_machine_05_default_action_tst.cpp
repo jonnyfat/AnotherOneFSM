@@ -3,9 +3,9 @@
 // Default-Aktion pro Event in allen Zuständen, in welchen keinen Übergang für
 // den Event spezifiziert wird
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
-using std::size_t;
+
 
 #include "aofsm/src/state_machine.h"
 #include "gmock/gmock.h"

@@ -3,9 +3,9 @@
 // Einfachte Parametrierung:
 // - nur einfachte Transitionen mit einem Action
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
-using std::size_t;
+
 
 #include "aofsm/src/state_machine_v1/state_machine.h"
 #include "gmock/gmock.h"

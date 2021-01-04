@@ -1,9 +1,9 @@
 // copyright Yevgen
 
-#ifndef AOFSM_SRC_STATE_MACHINE_DESCRIPTION_H_
-#define AOFSM_SRC_STATE_MACHINE_DESCRIPTION_H_
+#ifndef AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_
+#define AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
 #include "aofsm/src/state_info.h"
 
@@ -13,8 +13,6 @@
 
 namespace aofsm {
 namespace v1 {
-
-using std::size_t;
 
 // Die Klasse StateMachineDescription erlaubt es einem Client-Class aus einer
 // Menge von erlaubten Statemachine-Transitionen {SrcState,  Event, DstState,
@@ -328,4 +326,4 @@ StateMachineDescription<Context>::GetTransition(State_t src_state,
 }  // namespace v1
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_STATE_MACHINE_DESCRIPTION_H_
+#endif  // AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_

@@ -2,9 +2,9 @@
 //
 // Pro Zustand und Event: ein Guard, mit bool-Rückgabewert, und zwei Optionale
 // Übergänge (Ziel-Zustand und Actions)
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
-using std::size_t;
+
 
 #include "aofsm/src/state_machine.h"
 #include "gmock/gmock.h"

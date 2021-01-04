@@ -2,9 +2,9 @@
 //
 // Actions bei Transitionen haben Parameter
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
-using std::size_t;
+
 
 #include "aofsm/src/state_machine_aliases.h"
 #include "gmock/gmock.h"

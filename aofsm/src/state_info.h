@@ -2,11 +2,11 @@
 #ifndef AOFSM_SRC_STATE_INFO_H_
 #define AOFSM_SRC_STATE_INFO_H_
 
-#include <cstddef>
+#include "aofsm/src/std_types.h"
 
 namespace aofsm {
 
-using std::size_t;
+
 
 template <typename State_t, typename Action_t>
 struct StateInfo {
