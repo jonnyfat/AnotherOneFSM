@@ -23,15 +23,13 @@ struct StateMachineContext {
   };
 
   // Konstante für ungültiger StateId
-  static constexpr State kInvalidStateId = State::kStateCount;
+  static constexpr State kInvalidStateId = static_cast<State>(kStateCount);
 
   using TransitionData_t = TransitionData<StateMachineContext>;
 
-  using StateTransitionArray_t = TransitionData_t[kEventCount];
+  using StateTransitionsArray_t = TransitionData_t[kEventCount];
 
-  using StateTransitionArrayPtr_t = StateTransitionArray_t const *;
-
-  using TransitionMatrix_t = StateTransitionArrayPtr_t[kStateCount];
+  using StateTransitionsArrayPtr_t = StateTransitionsArray_t const *;
 };
 
 }  // namespace aofsm

@@ -8,7 +8,7 @@
 
 namespace aofsm {
 //--------------------------------------------
-// Enthält Array mit Context::StateTransitionArrayPtr_t pro jeden Zustand und
+// Enthält Array mit Context::StateTransitionsArrayPtr_t pro jeden Zustand und
 // für alle Zusände der State-Machine.
 template <typename Context>
 struct StateMachineDescription {
@@ -19,7 +19,7 @@ struct StateMachineDescription {
 
   static constexpr const TransitionData<Context>& GetTransitionData(
       typename Context::State_t state, typename Context::Event_t event) {
-    return StatesArray_t::GetStateTransitionArray(state)[event];
+    return StatesArray_t::GetStateTransitionsArray(state)[event];
   }
 };
 }  // namespace aofsm

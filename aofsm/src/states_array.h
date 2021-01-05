@@ -13,7 +13,7 @@ namespace aofsm {
 //-----------------------
 // GenerateStatesPtrArray
 template <size_t kFirstStateIndex, size_t kLastStateIndex, typename Context,
-          typename Context::StateTransitionArrayPtr_t... init_values>
+          typename Context::StateTransitionsArrayPtr_t... init_values>
 struct GenerateStatesPtrArray {
   using TransitionDataHolder_t =
       typename StateTransitions<Context,
@@ -28,7 +28,7 @@ struct GenerateStatesPtrArray {
 };
 
 template <size_t kFirstStateIndex, typename Context,
-          typename Context::StateTransitionArrayPtr_t... init_values>
+          typename Context::StateTransitionsArrayPtr_t... init_values>
 struct GenerateStatesPtrArray<kFirstStateIndex, kFirstStateIndex, Context,
                               init_values...> {
   using TransitionDataHolder_t =
