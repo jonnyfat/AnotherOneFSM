@@ -4,7 +4,7 @@
 
 #include "aofsm/src/transition_description.h"
 
-#include "aofsm/src/transition_data_holder.h"
+#include "aofsm/src/state_transitions_holder.h"
 
 namespace aofsm {
 
@@ -16,10 +16,10 @@ struct StateTransitionsGenerator {
   using TransitionDescription_t = TransitionDescription<
       Context, state, static_cast<typename Context::Event_t>(kLastEventIndex)>;
 
-  using TransitionDataHolder_t = typename StateTransitionsGenerator<
+  using StateTransitionsHolder_t = typename StateTransitionsGenerator<
       kFirstEventIndex, kLastEventIndex - 1, Context, state,
       TransitionDescription_t,
-      TransitionDescriptions...>::TransitionDataHolder_t;
+      TransitionDescriptions...>::StateTransitionsHolder_t;
 };
 
 // StateTransitionsGenerator: terminal spezialisation
@@ -30,8 +30,8 @@ struct StateTransitionsGenerator<kFirstEventIndex, kFirstEventIndex, Context,
   using TransitionDescription_t = TransitionDescription<
       Context, state, static_cast<typename Context::Event_t>(kFirstEventIndex)>;
 
-  using TransitionDataHolder_t =
-      TransitionDataHolder<Context, TransitionDescription_t,
+  using StateTransitionsHolder_t =
+      StateTransitionsHolder<Context, TransitionDescription_t,
                            TransitionDescriptions...>;
 };
 

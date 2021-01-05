@@ -7,7 +7,7 @@
 namespace aofsm {
 
 //-----------------------
-// StatesPtrArrayHolder
+// StatesArrayHolder
 // - Instantiiert ein Context::StateTransitionsArrayPtr_t-Array.
 //
 //      -- StateTransitionsArrayPtr_t ist ein Pointer auf
@@ -18,7 +18,7 @@ namespace aofsm {
 //   entsprechenden Initalwert aus Templateparameter-Pack init_values
 template <typename Context,
           typename Context::StateTransitionsArrayPtr_t... init_values>
-struct StatesPtrArrayHolder {
+struct StatesArrayHolder {
   static constexpr typename Context::StateTransitionsArrayPtr_t
       states[sizeof...(init_values)] = {init_values...};
 
@@ -32,7 +32,7 @@ struct StatesPtrArrayHolder {
 
 template <typename Context,
           typename Context::StateTransitionsArrayPtr_t... init_values>
-constexpr typename Context::StateTransitionsArrayPtr_t StatesPtrArrayHolder<
+constexpr typename Context::StateTransitionsArrayPtr_t StatesArrayHolder<
     Context, init_values...>::states[sizeof...(init_values)];
 
 }  // namespace aofsm

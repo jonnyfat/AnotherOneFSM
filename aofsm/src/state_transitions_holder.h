@@ -7,12 +7,12 @@
 namespace aofsm {
 
 //-----------------------
-// TransitionDataHolder
+// StateTransitionsHolder
 // - instantiiert ein TransitionData<>-Array
 // - intialisiert jedes TransitionData<>-Element mit
 // TransitionDescription, welche als Template-Parameter angegeben werden muss
 template <typename Context, typename... TransitionDescriptions>
-struct TransitionDataHolder {
+struct StateTransitionsHolder {
   // Array mit Transition-Informationen
   static constexpr TransitionData<Context> transition_data[sizeof...(
       TransitionDescriptions)] = {{TransitionDescriptions::transition_data}...};
@@ -22,7 +22,7 @@ struct TransitionDataHolder {
 
 template <typename Context, typename... TransitionDescriptions>
 constexpr TransitionData<Context>
-    TransitionDataHolder<Context, TransitionDescriptions...>::transition_data
+    StateTransitionsHolder<Context, TransitionDescriptions...>::transition_data
         [sizeof...(TransitionDescriptions)];
 
 }  // namespace aofsm

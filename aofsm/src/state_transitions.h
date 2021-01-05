@@ -17,14 +17,14 @@ struct StateTransitions {
   };
 
   // Mit Hilfe von Meta-Function GenerateTransitionDataArray wird
-  // TransitionDataHolder-Template-Instanz erzeugt.
-  using TransitionDataHolder_t =
+  // StateTransitionsHolder-Template-Instanz erzeugt.
+  using StateTransitionsHolder_t =
       typename StateTransitionsGenerator<kFirstEventIndex, kLastEventIndex,
                                          Context,
-                                         state>::TransitionDataHolder_t;
+                                         state>::StateTransitionsHolder_t;
 
   static_assert(
-      static_cast<size_t>(TransitionDataHolder_t::kTransitionDataCount) ==
+      static_cast<size_t>(StateTransitionsHolder_t::kTransitionDataCount) ==
       static_cast<size_t>(Context::kEventCount));
 };
 
