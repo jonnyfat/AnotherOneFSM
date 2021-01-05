@@ -32,7 +32,11 @@ struct StateTransitionsGenerator<kFirstEventIndex, kFirstEventIndex, Context,
 
   using StateTransitionsHolder_t =
       StateTransitionsHolder<Context, TransitionDescription_t,
-                           TransitionDescriptions...>;
+                             TransitionDescriptions...>;
+
+  static_assert(
+      static_cast<size_t>(StateTransitionsHolder_t::kTransitionDataCount) ==
+      static_cast<size_t>(Context::kEventCount));
 };
 
 }  // namespace aofsm

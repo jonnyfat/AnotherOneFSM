@@ -12,7 +12,6 @@ struct InvalidState {
   static constexpr State value = State::kStateCount;
 };
 
-// Bei meisten Compilern ist es nicht notwendig
 template <typename State>
 constexpr State InvalidState<State>::value;
 

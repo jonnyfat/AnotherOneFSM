@@ -9,24 +9,15 @@ namespace aofsm {
 //--------------------------------------------
 // Enthält Array mit TransitionData<> pro jeden Event der State-Machine für ein
 // Zustand der State-Machine.
-template <typename Context, typename Context::State_t state>
-struct StateTransitions {
-  enum : size_t {
-    kFirstEventIndex = 0,
-    kLastEventIndex = Context::kEventCount - 1
-  };
-
-  // Mit Hilfe von Meta-Function GenerateTransitionDataArray wird
-  // StateTransitionsHolder-Template-Instanz erzeugt.
-  using StateTransitionsHolder_t =
-      typename StateTransitionsGenerator<kFirstEventIndex, kLastEventIndex,
-                                         Context,
-                                         state>::StateTransitionsHolder_t;
-
-  static_assert(
-      static_cast<size_t>(StateTransitionsHolder_t::kTransitionDataCount) ==
-      static_cast<size_t>(Context::kEventCount));
-};
+template <typename Context, typename Context::State_t state,
+          size_t kFirstEventIndex = 0,
+          size_t kLastEventIndex = Context::kEventCount - 1>
+// Mit Hilfe von Meta-Function GenerateTransitionDataArray wird
+// StateTransitionsHolder-Template-Instanz erzeugt.
+using StateTransitions_t =
+    typename StateTransitionsGenerator<kFirstEventIndex, kLastEventIndex,
+                                       Context,
+                                       state>::StateTransitionsHolder_t;
 
 }  // namespace aofsm
 

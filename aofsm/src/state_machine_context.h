@@ -8,6 +8,7 @@
 
 namespace aofsm {
 
+// Enthält alle für State-Machine Relevanten Typen und Konstanten
 template <typename Client, typename State, typename Event, typename Action,
           typename Guard, size_t STATE_COUNT, size_t EVENT_COUNT>
 struct StateMachineContext {

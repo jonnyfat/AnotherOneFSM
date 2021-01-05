@@ -26,8 +26,6 @@ class StateMachine {
       StateMachineContext<Client, State_t, Event_t, Action_t, Guard_t,
                           State_t::kStateCount, Event_t::kEventCount>;
 
-  using TransitionData_t = TransitionData<Context_t>;
-
   using StateMachineDescription_t = StateMachineDescription<Context_t>;
 
   static constexpr bool IsValidState(State_t state) {

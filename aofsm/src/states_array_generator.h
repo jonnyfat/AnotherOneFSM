@@ -9,32 +9,32 @@
 namespace aofsm {
 
 //-----------------------
-// StatesArrayGenerator
+// StatesArrayGenerator: definition
 template <size_t kFirstStateIndex, size_t kLastStateIndex, typename Context,
           typename Context::StateTransitionsArrayPtr_t... init_values>
 struct StatesArrayGenerator {
-  using StateTransitionsHolder_t =
-      typename StateTransitions<Context,
-                                static_cast<typename Context::State_t>(
-                                    kLastStateIndex)>::StateTransitionsHolder_t;
+  using StateTransitions_t =
+      StateTransitions_t<Context, static_cast<typename Context::State_t>(
+                                      kLastStateIndex)>;
 
   using StatesArrayHolder_t =
       typename StatesArrayGenerator<kFirstStateIndex, kLastStateIndex - 1,
                                     Context,
-                                    &StateTransitionsHolder_t::transition_data,
+                                    &StateTransitions_t::transition_data,
                                     init_values...>::StatesArrayHolder_t;
 };
 
+// StatesArrayGenerator: terminal spezialisation
 template <size_t kFirstStateIndex, typename Context,
           typename Context::StateTransitionsArrayPtr_t... init_values>
 struct StatesArrayGenerator<kFirstStateIndex, kFirstStateIndex, Context,
                             init_values...> {
-  using StateTransitionsHolder_t = typename StateTransitions<
-      Context, static_cast<typename Context::State_t>(
-                   kFirstStateIndex)>::StateTransitionsHolder_t;
+  using StateTransitions_t =
+      StateTransitions_t<Context, static_cast<typename Context::State_t>(
+                                      kFirstStateIndex)>;
 
   using StatesArrayHolder_t =
-      StatesArrayHolder<Context, &StateTransitionsHolder_t::transition_data,
+      StatesArrayHolder<Context, &StateTransitions_t::transition_data,
                         init_values...>;
 };
 

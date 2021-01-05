@@ -12,7 +12,6 @@ struct InvalidAction {
   static constexpr Action value = nullptr;
 };
 
-// Bei meisten Compilern ist es nicht notwendig
 template <typename Action>
 constexpr Action InvalidAction<Action>::value;
 
