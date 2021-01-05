@@ -14,10 +14,10 @@ using internal::InvalidAction;
 using internal::InvalidState;
 
 // TransitionDescription dient der Definition von Client-State-Machine.
-// Eine-Template-Instanz entält Daten einer Transitionen für ein Event in einem
+// Eine-Template-Instanz enthält Daten einer Transition für ein Event in einem
 // Zustand.
-// Durch Template-Spezialisierung können die State-Machine-Transitionen
-// definiert werden.
+// Durch Template-Spezialisierung können die State-Machine-Transitionen für
+// jedes Paar {Zustand;Event} definiert werden.
 template <typename Context, typename Context::State_t src_state,
           typename Context::Event_t event>
 struct TransitionDescription {
