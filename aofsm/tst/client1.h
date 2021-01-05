@@ -53,7 +53,7 @@ class Client1 {
 };
 
 //----------------------------------------------------------------------------------
-//   DEF_TRANS
+//   DECL_TRANS
 DECL_TRANS(Client1::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE,
            DoStartA)
 
