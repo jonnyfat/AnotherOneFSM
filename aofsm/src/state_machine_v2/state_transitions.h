@@ -2,7 +2,7 @@
 #ifndef AOFSM_SRC_STATE_TRANSITIONS_H_
 #define AOFSM_SRC_STATE_TRANSITIONS_H_
 
-#include "aofsm/src/generate_transition_data.h"
+#include "aofsm/src/state_machine_v2/generate_transition_data.h"
 
 namespace aofsm {
 

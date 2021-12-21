@@ -2,11 +2,11 @@
 #ifndef AOFSM_SRC_TRANSITION_DESCRIPTION_H_
 #define AOFSM_SRC_TRANSITION_DESCRIPTION_H_
 
-#include "aofsm/src/transition_data.h"
+#include "aofsm/src/state_machine_v2/transition_data.h"
 
-#include "aofsm/src/invalid_state.h"
+#include "aofsm/src/state_machine_v2/invalid_state.h"
 
-#include "aofsm/src/invalid_action.h"
+#include "aofsm/src/state_machine_v2/invalid_action.h"
 
 namespace aofsm {
 

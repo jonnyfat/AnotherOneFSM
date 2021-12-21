@@ -7,6 +7,8 @@ set(ANOTHERONEFSM_VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options( -ggdb )
+
 option(BUILD_TEST "Unit-Test for aofsm" ON)
 
 # aofsm files mus be included with "aofsm/...."

@@ -5,9 +5,9 @@
 
 #include "aofsm/src/std_types.h"
 
-#include "aofsm/src/state_machine_v1/state_machine.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#include "aofsm/src/state_machine_v1/state_machine.h"
 
 // state machine
 // clang-format off
@@ -48,28 +48,19 @@ class SimlpeClient1 {
   enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
   enum Event { kStartAEvt, kStartBEvt, kEndEvt, kEventCount };
 
-  void DoStartA() { Trigger(kStartAEvt); }
-  void DoStartB() { Trigger(kStartBEvt); }
+  void DoStartA() {}
+  void DoStartB() {}
   void DoEndA() {}
   void DoEndB() {}
 
-  friend class aofsm::v1::StateMachine<SimlpeClient1>;
-
-  using StateMachine_t = aofsm::v1::StateMachine<SimlpeClient1>;
-
-  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
-
-  static StateMachineDescription_t state_machine_description_;
-
-  StateMachine_t state_machine_{this, state_machine_description_};
+  DECL_STATE_MACHINE(SimlpeClient1, state_machine_);
 };
 
-SimlpeClient1::StateMachineDescription_t
-    SimlpeClient1::state_machine_description_{
-        {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
-         {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
-         {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
-         {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
+DEF_STATE_MACHINE(SimlpeClient1, state_machine_){
+    {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
+     {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
+     {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
+     {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 
 TEST(aofsm_StateMachine, MustHaveInitialStateAfterInstantiation) {
   // Act
@@ -85,9 +76,21 @@ TEST(aofsm_StateMachine, MustChangeStateAfterTrigger) {
   SimlpeClient1 simple_client;
 
   // Act
-  simple_client.Trigger(kStartAEvt);
+  simple_client.state_machine_.Trigger(SimlpeClient1::Event::kStartAEvt);
 
   // Assert
   EXPECT_EQ(simple_client.state_machine_.GetCurrentState(),
-            SimlpeClient1::State::INITIAL_STATE);
+            SimlpeClient1::State::A_STATE);
+}
+
+TEST(aofsm_StateMachine, MustChangeOtherStateAfterOtherTrigger) {
+  // Arrange
+  SimlpeClient1 simple_client;
+
+  // Act
+  simple_client.state_machine_.Trigger(SimlpeClient1::Event::kStartBEvt);
+
+  // Assert
+  EXPECT_EQ(simple_client.state_machine_.GetCurrentState(),
+            SimlpeClient1::State::B_STATE);
 }

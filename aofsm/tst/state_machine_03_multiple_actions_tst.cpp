@@ -4,15 +4,15 @@
 
 #include "aofsm/src/std_types.h"
 
-
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "aofsm/src/state_machine_aliases.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 // state machine
 //
-//  [INITIAL_STATE]+->(StartEvt -> [MIDDLE_STATE] -> (EndEvt  +-> [FINAL_STATE]
+//  [INITIAL_STATE]+->(StartEvt -> [MIDDLE_STATE] -> (EndEvt  +->
+//  [FINAL_STATE]
 //                 |    \DoStart,                     \DoTick, |
 //                 |     DoTick)                        DoEnd)|
 //                                  <-ResetEvt
@@ -38,34 +38,55 @@ class SimlpeClient3 {
   enum State { INITIAL_STATE, MIDDLE_STATE, FINAL_STATE, kStateCount };
   enum Event { kStartEvt, kEndEvt, kResetEvt, kEventCount };
 
-  void Start() { state_machine_.Trigger(kStartEvt); }
-  void End() { state_machine_.Trigger(kEndEvt); }
-  void Reset() { state_machine_.Trigger(kResetEvt); }
+  MOCK_METHOD(void, DoStart, (), ());
+  MOCK_METHOD(void, DoTick, (), ());
+  MOCK_METHOD(void, DoEnd, (), ());
+  MOCK_METHOD(void, DoReset, (), ());
+  MOCK_METHOD(void, DoNop, (), ());
 
- private:
-  void DoStart() {}
-  void DoTick() {}
-  void DoEnd() {}
-  void DoReset() {}
-  void DoNop() {}
+  DECL_STATE_MACHINE_WITH_MULT_ACTIONS(SimlpeClient3, state_machine_, 2);
 
-  using StateMachine_t = aofsm::StateMachineWithCustomActions<SimlpeClient3, 2>;
-
-  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
-
-  static const StateMachineDescription_t state_machine_description_;
-
-  StateMachine_t state_machine_{this, state_machine_description_};
+  //  using StateMachine_t =
+  //      aofsm::v1::StateMachineWithCustomActions<SimlpeClient3, 2>;
+  //
+  //  using StateMachineDescription_t =
+  //  StateMachine_t::StateMachineDescription_t;
+  //
+  //  static const StateMachineDescription_t state_machine_description_;
+  //
+  //  StateMachine_t state_machine_{this, state_machine_description_};
 };
 
-const SimlpeClient3::StateMachineDescription_t
-    SimlpeClient3::state_machine_description_{
-        {// Transitions
-         // {Src-State  Event   Dst-State Actions}
-         {INITIAL_STATE, kStartEvt, MIDDLE_STATE, {&DoStart, &DoTick}},
-         {MIDDLE_STATE, kEndEvt, FINAL_STATE, {&DoTick, &DoEnd}},
-         {FINAL_STATE, kResetEvt, INITIAL_STATE, &DoReset}}};
+DEF_STATE_MACHINE(SimlpeClient3, state_machine_){
+    {// Transitions
+     // {Src-State  Event   Dst-State Actions}
+     {INITIAL_STATE, kStartEvt, MIDDLE_STATE, {&DoStart, &DoTick}},
+     {MIDDLE_STATE, kEndEvt, FINAL_STATE, {&DoTick, &DoEnd}},
+     {FINAL_STATE, kResetEvt, INITIAL_STATE, &DoReset}}};
 
-TEST(aofsm_StateMachineMultipleActions, instantiate) {
+// const SimlpeClient3::StateMachineDescription_t
+//    SimlpeClient3::state_machine_description_{
+//        {// Transitions
+//         // {Src-State  Event   Dst-State Actions}
+//         {INITIAL_STATE, kStartEvt, MIDDLE_STATE, {&DoStart, &DoTick}},
+//         {MIDDLE_STATE, kEndEvt, FINAL_STATE, {&DoTick, &DoEnd}},
+//         {FINAL_STATE, kResetEvt, INITIAL_STATE, &DoReset}}};
+
+TEST(aofsm_StateMachineMultipleActions,
+     MastCallAllActionsOnTransitionWithMultipleActions) {
+  // Arrange
   SimlpeClient3 simple_client;
+  EXPECT_CALL(simple_client, DoStart).Times(1);
+  EXPECT_CALL(simple_client, DoTick).Times(1);
+
+  EXPECT_CALL(simple_client, DoEnd).Times(0);
+  EXPECT_CALL(simple_client, DoReset).Times(0);
+  EXPECT_CALL(simple_client, DoNop).Times(0);
+
+  // Act
+  simple_client.state_machine_.Trigger(SimlpeClient3::Event::kStartEvt);
+
+  // Assert
+  EXPECT_EQ(simple_client.state_machine_.GetCurrentState(),
+            SimlpeClient3::State::MIDDLE_STATE);
 }

@@ -2,7 +2,7 @@
 #ifndef AOFSM_SRC_TRANSITION_DATA_HOLDER_H_
 #define AOFSM_SRC_TRANSITION_DATA_HOLDER_H_
 
-#include "aofsm/src/transition_data.h"
+#include "aofsm/src/state_machine_v2/transition_data.h"
 
 namespace aofsm {
 

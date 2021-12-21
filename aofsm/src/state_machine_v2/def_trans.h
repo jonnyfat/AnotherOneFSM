@@ -2,8 +2,6 @@
 #ifndef AOFSM_SRC_DEF_TRANS_H_
 #define AOFSM_SRC_DEF_TRANS_H_
 
-#include "aofsm/src/transition_description.h"
-
 #define DEF_TRANS(FSM_DESCR, SRC_STATE, EVENT, DST_STATE, ACTION)             \
   template <>                                                                 \
   struct aofsm::TransitionDescription<FSM_DESCR::Context_t,                   \

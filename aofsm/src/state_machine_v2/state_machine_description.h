@@ -4,9 +4,7 @@
 
 #include "aofsm/src/std_types.h"
 
-
-
-#include "aofsm/src/generate_states_ptr_array.h"
+#include "aofsm/src/state_machine_v2/generate_states_ptr_array.h"
 
 namespace aofsm {
 //--------------------------------------------

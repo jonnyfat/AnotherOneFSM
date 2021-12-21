@@ -5,11 +5,9 @@
 
 #include "aofsm/src/std_types.h"
 
-
+#include "gtest/gtest.h"
 
 #include "aofsm/src/state_machine.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 // Beispiel Client Class für State-Machine
 class SimlpeClient5 {

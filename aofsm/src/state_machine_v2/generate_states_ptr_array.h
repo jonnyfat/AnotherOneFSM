@@ -4,9 +4,9 @@
 
 #include "aofsm/src/std_types.h"
 
-#include "aofsm/src/state_transitions.h"
+#include "aofsm/src/state_machine_v2/state_transitions.h"
 
-#include "aofsm/src/states_ptr_array_holder.h"
+#include "aofsm/src/state_machine_v2/states_ptr_array_holder.h"
 
 namespace aofsm {
 

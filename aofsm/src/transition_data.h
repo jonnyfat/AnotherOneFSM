@@ -1,23 +1,32 @@
-// Copyright Yevgen
-#ifndef AOFSM_SRC_TRANSITION_DATA_H_
-#define AOFSM_SRC_TRANSITION_DATA_H_
+//----------------------------------------------------------------------------
+// Copyright: HIMA - Paul Hildebrandt GmbH
+//
+//----------------------------------------------------------------------------
 
-#include "aofsm/src/invalid_state.h"
+#ifndef AOFSM_SRC_TRANSITION_FOR_STATE_AND_EVENT_H_
+#define AOFSM_SRC_TRANSITION_FOR_STATE_AND_EVENT_H_
 
 namespace aofsm {
 
-using internal::InvalidState;
-
 template <typename Context>
 struct TransitionData {
-  typename Context::State_t dest_state;
-  typename Context::Action_t action;
-  bool IsInvalidState() const {
-    return dest_state == InvalidState<typename Context::State_t>::value;
-  }
-  bool IsValidState() const { return !IsInvalidState(); }
+  using State_t = typename Context::State_t;
+  using Action_t = typename Context::Action_t;
+  using Guard_t = typename Context::Guard_t;
+
+  Guard_t guard_action;  ///< Bestimmt ob trans1 oder Trans2 ausgeführt wird
+                         ///< trans1 : Transition, wenn guard_action nullptr
+                         ///< oder liefert true
+
+  // trans1 : Transition, wenn guard_action nullptr oder liefert true
+  State_t trans1_dst_state;
+  Action_t trans1_actions;
+
+  // trans2 : Transition, wenn guard_action liefert false
+  State_t trans2_dst_state;
+  Action_t trans2_actions;
 };
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_TRANSITION_DATA_H_
+#endif  // AOFSM_SRC_TRANSITION_FOR_STATE_AND_EVENT_H_

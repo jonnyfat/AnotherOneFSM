@@ -6,9 +6,20 @@
 #include "aofsm/src/std_types.h"
 
 #include "aofsm/src/array_of_actions.h"
-#include "aofsm/src/state_machine_context.h"
+#include "aofsm/src/state_machine_v1/state_machine_context.h"
 #include "aofsm/src/state_machine_v1/state_machine_description.h"
 #include "aofsm/src/transition.h"
+
+#define DECL_STATE_MACHINE(__class_name__, __member_name__)                    \
+  friend class aofsm::v1::StateMachine<__class_name__>;                        \
+  using StateMachine_t = aofsm::v1::StateMachine<__class_name__>;              \
+  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t; \
+  static const StateMachineDescription_t __member_name__##description;         \
+  StateMachine_t __member_name__{this, __member_name__##description};
+
+#define DEF_STATE_MACHINE(__class_name__, __member_name__) \
+  const __class_name__::StateMachineDescription_t          \
+      __class_name__::__member_name__##description
 
 namespace aofsm {
 namespace v1 {
@@ -111,7 +122,8 @@ class StateMachine {
 
   using StateMachineDescription_t = StateMachineDescription<Context_t>;
 
-  using EventTransition_t = typename StateMachineDescription_t::EventTransition;
+  using EventTransition_t =
+      typename StateMachineDescription_t::TransitionForStateAndEvent_t;
 
   // Konstruktor: Initialisierung der State-Machine nur mit der
   // Transition-Konfiguration
@@ -179,7 +191,7 @@ void StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
 template <typename Client, typename State, typename Event,
           size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
 State StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::GetCurrentState() const{
+                   ActionParameterTypes...>::GetCurrentState() const {
   return current_state_;
 }
 
