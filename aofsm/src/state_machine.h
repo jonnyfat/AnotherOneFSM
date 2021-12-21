@@ -28,11 +28,15 @@ class StateMachine {
 
   using StateMachineDescription_t = StateMachineDescription<Context_t>;
 
+  explicit StateMachine(Client * client) : client_(client) { }
+
   static constexpr bool IsValidState(State_t state) {
     return state >= 0 && state < State_t::kStateCount;
   }
 
   State_t current_state_{State_t::INITIAL_STATE};
+
+  Client * client_;
 };
 
 }  // namespace aofsm

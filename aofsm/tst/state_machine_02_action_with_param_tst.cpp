@@ -4,10 +4,8 @@
 
 #include "aofsm/src/std_types.h"
 
+#include "aofsm/src/aofsm.h"
 
-
-#include "aofsm/src/state_machine_aliases.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 // state machine
@@ -60,23 +58,27 @@ class SimlpeClient2 {
   void DoEndB(Data*) {}
 
   using StateMachine_t =
-      aofsm::v1::StateMachineWithCustomActions<SimlpeClient2, 2, Data*>;
+      aofsm::StateMachine<SimlpeClient2, 2, Data*>;
 
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 
   static const StateMachineDescription_t state_machine_description_;
 
-  StateMachine_t state_machine_{this, state_machine_description_};
+  StateMachine_t state_machine_{this};
 };
 
-const SimlpeClient2::StateMachineDescription_t
-    SimlpeClient2::state_machine_description_{
-        {// Transitions
-         // {Source-State Event Destination-State Actions}
-         {INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
-         {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
-         {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
-         {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
+//----------------------------------------------------------------------------------
+//   DECL_TRANS
+DECL_TRANS(SimlpeClient2::StateMachine_t, INITIAL_STATE, kStartAEvt, A_STATE,
+           DoStartA)
+
+DECL_TRANS(SimlpeClient2::StateMachine_t, INITIAL_STATE, kStartBEvt, B_STATE,
+           DoStartB)
+
+DECL_TRANS(SimlpeClient2::StateMachine_t, A_STATE, kEndEvt, FINAL_STATE, DoEndA)
+
+DECL_TRANS(SimlpeClient2::StateMachine_t, B_STATE, kEndEvt, FINAL_STATE, DoEndB)
+
 
 TEST(aofsm_StateMachineActionWithParam, trigger) {
   SimlpeClient2 simple_client;
