@@ -12,3 +12,7 @@ add_executable(aofsm_tst
            
 target_link_libraries(aofsm_tst PUBLIC gmock_main
                                 PRIVATE aofsm )
+                                
+                                
+add_custom_target(exec_aofsm_tst DEPENDS aofsm_tst COMMAND aofsm_tst)
+

@@ -5,8 +5,6 @@
 
 #include "aofsm/src/std_types.h"
 
-
-
 #include "aofsm/src/state_machine_v1/state_machine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -47,12 +45,11 @@ class SimlpeClient1 {
 
   void End() { state_machine_.Trigger(kEndEvt); }
 
- private:
   enum State { INITIAL_STATE, A_STATE, B_STATE, FINAL_STATE, kStateCount };
   enum Event { kStartAEvt, kStartBEvt, kEndEvt, kEventCount };
 
-  void DoStartA() {}
-  void DoStartB() {}
+  void DoStartA() { Trigger(kStartAEvt); }
+  void DoStartB() { Trigger(kStartBEvt); }
   void DoEndA() {}
   void DoEndB() {}
 
@@ -74,4 +71,23 @@ SimlpeClient1::StateMachineDescription_t
          {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
          {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 
-TEST(aofsm_StateMachine, trigger) { SimlpeClient1 simple_client; }
+TEST(aofsm_StateMachine, MustHaveInitialStateAfterInstantiation) {
+  // Act
+  SimlpeClient1 simple_client;
+
+  // Assert
+  EXPECT_EQ(simple_client.state_machine_.GetCurrentState(),
+            SimlpeClient1::State::INITIAL_STATE);
+}
+
+TEST(aofsm_StateMachine, MustChangeStateAfterTrigger) {
+  // Arrange
+  SimlpeClient1 simple_client;
+
+  // Act
+  simple_client.Trigger(kStartAEvt);
+
+  // Assert
+  EXPECT_EQ(simple_client.state_machine_.GetCurrentState(),
+            SimlpeClient1::State::INITIAL_STATE);
+}

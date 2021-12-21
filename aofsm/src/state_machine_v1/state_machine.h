@@ -123,6 +123,8 @@ class StateMachine {
 
   void SetCurrentState(State state);
 
+  State GetCurrentState() const;
+
  private:
   Client* client_{nullptr};
 
@@ -173,6 +175,14 @@ void StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
                   ActionParameterTypes...>::SetCurrentState(State state) {
   current_state_ = state;
 }
+
+template <typename Client, typename State, typename Event,
+          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
+State StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
+                  ActionParameterTypes...>::GetCurrentState() const{
+  return current_state_;
+}
+
 }  // namespace v1
 }  // namespace aofsm
 
