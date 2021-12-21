@@ -7,7 +7,7 @@
 
 #include "gtest/gtest.h"
 
-#include "aofsm/src/state_machine_v1/state_machine.h"
+#include "aofsm/src/state_machine.h"
 
 // state machine
 // clang-format off

@@ -5,14 +5,33 @@
 
 #include "aofsm/src/std_types.h"
 
-#include "aofsm/src/array_of_actions.h"
-#include "aofsm/src/state_machine_v1/state_machine_context.h"
-#include "aofsm/src/state_machine_v1/state_machine_description.h"
-#include "aofsm/src/transition.h"
+#include "aofsm/src/internal/array_of_actions.h"
+#include "aofsm/src/internal/state_machine_context.h"
+#include "aofsm/src/internal/state_machine_description.h"
+#include "aofsm/src/internal/transition.h"
 
 #define DECL_STATE_MACHINE(__class_name__, __member_name__)                    \
-  friend class aofsm::v1::StateMachine<__class_name__>;                        \
-  using StateMachine_t = aofsm::v1::StateMachine<__class_name__>;              \
+  friend class aofsm::StateMachine<__class_name__>;                            \
+  using StateMachine_t = aofsm::StateMachine<__class_name__>;                  \
+  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t; \
+  static const StateMachineDescription_t __member_name__##description;         \
+  StateMachine_t __member_name__{this, __member_name__##description};
+
+#define DECL_STATE_MACHINE_WITH_MULT_ACTIONS(__class_name__, __member_name__,  \
+                                             __action_count__)                 \
+  friend class aofsm::StateMachine<__class_name__, __action_count__>;          \
+  using StateMachine_t =                                                       \
+      aofsm::StateMachine<__class_name__, __action_count__>;                   \
+  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t; \
+  static const StateMachineDescription_t __member_name__##description;         \
+  StateMachine_t __member_name__{this, __member_name__##description};
+
+#define DECL_STATE_MACHINE_WITH_MULT_ACTIONS_AND_TYPES(                        \
+    __class_name__, __member_name__, __action_count__, ...)                    \
+  friend class aofsm::StateMachine<__class_name__, __action_count__,           \
+                                   __VA_ARGS__>;                               \
+  using StateMachine_t =                                                       \
+      aofsm::StateMachine<__class_name__, __action_count__, __VA_ARGS__>;      \
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t; \
   static const StateMachineDescription_t __member_name__##description;         \
   StateMachine_t __member_name__{this, __member_name__##description};
@@ -22,7 +41,6 @@
       __class_name__::__member_name__##description
 
 namespace aofsm {
-namespace v1 {
 
 // Die Klasse StateMachine erlaubt es einem Client-Class die eigenen Methoden
 // Zustands- und Erreignis-abhängig aufzurufen.
@@ -94,12 +112,13 @@ namespace v1 {
 //  - ActionParameterTypes - template parameter pack :  Signatur von
 //    Action-Methoden. Wenn leer dann sind Action-Methoden void(void)
 //
-template <typename Client, typename State = typename Client::State,
-          typename Event = typename Client::Event,
-          size_t MAX_ACTIONS_PER_TRANSITION = 1,
+template <typename Client, size_t MAX_ACTIONS_PER_TRANSITION = 1,
           typename... ActionParameterTypes>
 class StateMachine {
  public:
+  using State = typename Client::State;
+  using Event = typename Client::Event;
+
   // Pointer auf Member-Methode des Clients, welche bei einer Transition als
   // Action aufgerufen wird.
   using ActionStep_t = void (Client::*)(ActionParameterTypes...);
@@ -133,9 +152,9 @@ class StateMachine {
 
   void Trigger(Event event, ActionParameterTypes... params);
 
-  void SetCurrentState(State state);
+  void SetCurrentState(State state) { current_state_ = state; }
 
-  State GetCurrentState() const;
+  State GetCurrentState() const { return current_state_; }
 
  private:
   Client* client_{nullptr};
@@ -145,19 +164,16 @@ class StateMachine {
   State current_state_{State::INITIAL_STATE};
 };
 
-template <typename Client, typename State, typename Event,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
-             ActionParameterTypes...>::
+template <typename Client, size_t MAX_ACTIONS_PER_TRANSITION,
+          typename... ActionParameterTypes>
+StateMachine<Client, MAX_ACTIONS_PER_TRANSITION, ActionParameterTypes...>::
     StateMachine(Client* client, const StateMachineDescription_t& description)
     : client_{client}, description_{description} {}
 
-template <typename Client, typename State, typename Event,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<
-    Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
-    ActionParameterTypes...>::Trigger(Event event,
-                                      ActionParameterTypes... params) {
+template <typename Client, size_t MAX_ACTIONS_PER_TRANSITION,
+          typename... ActionParameterTypes>
+void StateMachine<Client, MAX_ACTIONS_PER_TRANSITION, ActionParameterTypes...>::
+    Trigger(Event event, ActionParameterTypes... params) {
   if (current_state_ < State::kStateCount && event < Event::kEventCount) {
     // Transaction in aktuellem Zustand für den aktuellen Event.
     const EventTransition_t& current_transition =
@@ -181,21 +197,6 @@ void StateMachine<
   }
 }
 
-template <typename Client, typename State, typename Event,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-void StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
-                  ActionParameterTypes...>::SetCurrentState(State state) {
-  current_state_ = state;
-}
-
-template <typename Client, typename State, typename Event,
-          size_t MAX_ACTIONS_PER_TRANSITION, typename... ActionParameterTypes>
-State StateMachine<Client, State, Event, MAX_ACTIONS_PER_TRANSITION,
-                   ActionParameterTypes...>::GetCurrentState() const {
-  return current_state_;
-}
-
-}  // namespace v1
 }  // namespace aofsm
 
 #endif  // AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_H_

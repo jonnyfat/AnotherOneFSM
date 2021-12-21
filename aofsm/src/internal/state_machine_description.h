@@ -3,15 +3,15 @@
 #ifndef AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_
 #define AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_
 
-#include "../transition_data.h"
 #include "aofsm/src/std_types.h"
 
-#include "aofsm/src/state_info.h"
+#include "aofsm/src/internal/transition_data.h"
 
-#include "aofsm/src/transition.h"
+#include "aofsm/src/internal/state_info.h"
+
+#include "aofsm/src/internal/transition.h"
 
 namespace aofsm {
-namespace v1 {
 
 // Die Klasse StateMachineDescription erlaubt es einem Client-Class aus einer
 // Menge von erlaubten Statemachine-Transitionen {SrcState,  Event, DstState,
@@ -310,7 +310,6 @@ StateMachineDescription<Context>::GetTransition(State_t src_state,
   return state_transitions_[src_state].event_transitions[event];
 }
 
-}  // namespace v1
 }  // namespace aofsm
 
 #endif  // AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_

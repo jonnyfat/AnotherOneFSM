@@ -4,9 +4,7 @@
 
 #include "aofsm/src/std_types.h"
 
-
-
-#include "aofsm/src/state_machine_aliases.h"
+#include "aofsm/src/state_machine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -59,24 +57,17 @@ class SimlpeClient2 {
   void DoEndA(Data*) {}
   void DoEndB(Data*) {}
 
-  using StateMachine_t =
-      aofsm::v1::StateMachineWithCustomActions<SimlpeClient2, 2, Data*>;
-
-  using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
-
-  static const StateMachineDescription_t state_machine_description_;
-
-  StateMachine_t state_machine_{this, state_machine_description_};
+  DECL_STATE_MACHINE_WITH_MULT_ACTIONS_AND_TYPES(SimlpeClient2, state_machine_,
+                                                 2, Data*);
 };
 
-const SimlpeClient2::StateMachineDescription_t
-    SimlpeClient2::state_machine_description_{
-        {// Transitions
-         // {Source-State Event Destination-State Actions}
-         {INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
-         {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
-         {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
-         {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
+DEF_STATE_MACHINE(SimlpeClient2, state_machine_){
+    {// Transitions
+     // {Source-State Event Destination-State Actions}
+     {INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
+     {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
+     {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
+     {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 
 TEST(aofsm_StateMachineActionWithParam, trigger) {
   SimlpeClient2 simple_client;
