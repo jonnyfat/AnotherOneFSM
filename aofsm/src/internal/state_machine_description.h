@@ -198,8 +198,6 @@ class StateMachineDescription {
                       size_t substates_count);
 
   struct StateTransitions {
-    bool has_substates_{false};
-
     State_t parent_state{Context::kInvalidStateId};
 
     Action_t on_entry_action;

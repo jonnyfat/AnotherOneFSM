@@ -10,6 +10,12 @@
 #include "aofsm/src/internal/state_machine_description.h"
 #include "aofsm/src/internal/transition.h"
 
+// Macro für Deklaration von State-Machine im Rumpf der Klasse
+// class SimlpeClient1 {
+//  ...;
+//  DECL_STATE_MACHINE(SimlpeClient1, state_machine_);
+// };
+
 #define DECL_STATE_MACHINE(__class_name__, __member_name__)                    \
   friend class aofsm::StateMachine<__class_name__>;                            \
   using StateMachine_t = aofsm::StateMachine<__class_name__>;                  \
@@ -36,6 +42,13 @@
   static const StateMachineDescription_t __member_name__##description;         \
   StateMachine_t __member_name__{this, __member_name__##description};
 
+// Macro für Definition von State-Machine im cpp-Datei der Klasse
+// Achtung: 2x"{"-Klammer am Anfang und 2x"}"-Klammer am Ende!
+// DEF_STATE_MACHINE(SimlpeClient1, state_machine_){
+//    {{INITIAL_STATE, kStartAEvt, A_STATE, &DoStartA},
+//     {INITIAL_STATE, kStartBEvt, B_STATE, &DoStartB},
+//     {A_STATE, kEndEvt, FINAL_STATE, &DoEndA},
+//     {B_STATE, kEndEvt, FINAL_STATE, &DoEndB}}};
 #define DEF_STATE_MACHINE(__class_name__, __member_name__) \
   const __class_name__::StateMachineDescription_t          \
       __class_name__::__member_name__##description
