@@ -3,13 +3,13 @@
 #ifndef AOFSM_SRC_TRANSITION_H_
 #define AOFSM_SRC_TRANSITION_H_
 
-#include "transition_data.h"
+#include "aofsm/src/internal/state_machine_transition_data.h"
 
 namespace aofsm {
 
 // Struktur für Transitionen einer State-Machine
 template <typename Context>
-struct Transition {
+struct StateMachineTransition {
   using State_t = typename Context::State_t;
   using Event_t = typename Context::Event_t;
   using Action_t = typename Context::Action_t;
@@ -50,54 +50,55 @@ struct Transition {
 
   const Event_t event;  ///< für alle TransitionType
 
-  TransitionData<Context> transition_data;
+  StateMachineTransitionData<Context> transition_data;
 
   // Konstruktor für Parametrieren von Default-Action für ein Event der
   // State-Machine. Es gilt für alle Zustädnde der Machine für welche keine
   // Default-Transition und kein Transition für das Event parametriert ist.
-  Transition(Event_t event, const Action_t& action)
+  StateMachineTransition(Event_t event, const Action_t& action)
       : transition_type{TransitionType::kDefaultAction},
-        src_state{Context::kInvalidStateId},        ///<  ungültig
-        event{event},                               ///< gültig
+        src_state{Context::kInvalidStateId},       ///<  ungültig
+        event{event},                              ///< gültig
         transition_data{nullptr,                   ///<  kein Guard
-                         Context::kInvalidStateId,  ///<  ungültig
-                         action,                    ///< gültig
-                         Context::kInvalidStateId,  ///<  ungültig
-                         Action_t()} {}             ///<  leer
+                        Context::kInvalidStateId,  ///<  ungültig
+                        action,                    ///< gültig
+                        Context::kInvalidStateId,  ///<  ungültig
+                        Action_t()} {}             ///<  leer
 
   // Konstruktor für Parametrierung einer Default-Transition für ein Event der
   // State-Machine. Es gilt für alle Zustände der Machine für welche keine
   // Transition für das Event parametriert ist.
-  Transition(Event_t event, State_t dst_state, const Action_t& action)
+  StateMachineTransition(Event_t event, State_t dst_state,
+                         const Action_t& action)
       : transition_type{TransitionType::kDefaultTransition},
-        src_state{Context::kInvalidStateId},        ///<  ungültig
-        event{event},                               ///< gültig
+        src_state{Context::kInvalidStateId},       ///<  ungültig
+        event{event},                              ///< gültig
         transition_data{nullptr,                   ///<  kein Guard
-                         dst_state,                 ///< gültig
-                         action,                    ///< gültig
-                         Context::kInvalidStateId,  ///<  ungültig
-                         Action_t()} {}             ///<  leer
+                        dst_state,                 ///< gültig
+                        action,                    ///< gültig
+                        Context::kInvalidStateId,  ///<  ungültig
+                        Action_t()} {}             ///<  leer
 
   // Konstruktor für Parametrierung einer unbedingten Transition für ein Event
   // in einem Zustand.
-  Transition(State_t src_state, Event_t event, State_t dst_state,
-             const Action_t& action)
+  StateMachineTransition(State_t src_state, Event_t event, State_t dst_state,
+                         const Action_t& action)
       : transition_type{TransitionType::kTransition},
         src_state{src_state},
         event{event},
         transition_data{nullptr, dst_state, action, Context::kInvalidStateId,
-                         Action_t()} {}
+                        Action_t()} {}
 
   // Konstruktor für Parametrierung einer bedingten Transition für ein Event
   // in einem Zustand.
-  Transition(State_t src_state, Event_t event, Guard_t guard_action,
-             State_t dst_state_1, const Action_t& action_1, State_t dst_state_2,
-             const Action_t& action_2)
+  StateMachineTransition(State_t src_state, Event_t event, Guard_t guard_action,
+                         State_t dst_state_1, const Action_t& action_1,
+                         State_t dst_state_2, const Action_t& action_2)
       : transition_type{TransitionType::kConditionalTransition},
         src_state{src_state},
         event{event},
         transition_data{guard_action, dst_state_1, action_1, dst_state_2,
-                         action_2} {}
+                        action_2} {}
 };
 
 }  // namespace aofsm

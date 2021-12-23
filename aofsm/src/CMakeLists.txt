@@ -1,3 +1,3 @@
 add_library(aofsm 
-                  state_machine.cpp state_machine.h)
+                  state_machine_instance.cpp state_machine_instance.h)
             

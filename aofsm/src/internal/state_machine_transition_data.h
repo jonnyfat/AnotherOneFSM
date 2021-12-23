@@ -3,13 +3,14 @@
 //
 //----------------------------------------------------------------------------
 
-#ifndef AOFSM_SRC_TRANSITION_FOR_STATE_AND_EVENT_H_
-#define AOFSM_SRC_TRANSITION_FOR_STATE_AND_EVENT_H_
+#ifndef AOFSM_SRC_INTERNAL_TRANSITION_DATA_H_
+#define AOFSM_SRC_INTERNAL_TRANSITION_DATA_H_
 
 namespace aofsm {
 
+// Kapselt die Teilinformation einer Transition für einen State und Event.
 template <typename Context>
-struct TransitionData {
+struct StateMachineTransitionData {
   using State_t = typename Context::State_t;
   using Action_t = typename Context::Action_t;
   using Guard_t = typename Context::Guard_t;
@@ -20,13 +21,13 @@ struct TransitionData {
 
   // trans1 : Transition, wenn guard_action nullptr oder liefert true
   State_t trans1_dst_state;
-  Action_t trans1_actions;
+  Action_t trans1_action;
 
   // trans2 : Transition, wenn guard_action liefert false
   State_t trans2_dst_state;
-  Action_t trans2_actions;
+  Action_t trans2_action;
 };
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_TRANSITION_FOR_STATE_AND_EVENT_H_
+#endif  // AOFSM_SRC_INTERNAL_TRANSITION_DATA_H_

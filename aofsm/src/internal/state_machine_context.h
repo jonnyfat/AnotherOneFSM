@@ -1,13 +1,14 @@
 // Copyright Yevgen
-#ifndef AOFSM_SRC_STATE_MACHINE_CONTEXT_H_
-#define AOFSM_SRC_STATE_MACHINE_CONTEXT_H_
+#ifndef AOFSM_SRC_INTERNAL_STATE_MACHINE_CONTEXT_H_
+#define AOFSM_SRC_INTERNAL_STATE_MACHINE_CONTEXT_H_
 
 namespace aofsm {
 
+// Kapselt alle Parameter einer State-Machine, um andere Klassen der
+// Implementierung auf einfache Weise zu Parametrieren.
 template <typename Client, typename State, typename Event, typename Action,
           typename Guard, size_t STATE_COUNT, size_t EVENT_COUNT>
 struct StateMachineContext {
-  using Client_t = Client;
   using State_t = State;
   using Event_t = Event;
   using Action_t = Action;
@@ -24,4 +25,4 @@ struct StateMachineContext {
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_STATE_MACHINE_CONTEXT_H_
+#endif  //  AOFSM_SRC_INTERNAL_STATE_MACHINE_CONTEXT_H_

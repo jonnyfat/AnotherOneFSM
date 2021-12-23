@@ -3,11 +3,11 @@
 // Alle State-Machine Parametrierungsmöglichkeiten in einem Client.
 //
 
+#include "../src/state_machine_instance.h"
 #include "aofsm/src/std_types.h"
 
 
 
-#include "aofsm/src/state_machine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -66,7 +66,7 @@ class SimlpeClient9 {
 
   // Im einfachsten Fall muss StateMachine-Template mit der Client Class
   // parametriert werden.
-  using ClientStateMachine_t = aofsm::StateMachine<SimlpeClient9>;
+  using ClientStateMachine_t = aofsm::StateMachineInstance<SimlpeClient9>;
 
   // Bei Instantiierung muss Zeiger auf Client Class-Instanz übergeben
   // werden.

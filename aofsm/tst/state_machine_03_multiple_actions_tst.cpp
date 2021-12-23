@@ -2,12 +2,11 @@
 //
 // Mehrere Aktionen pro Transition
 
+#include "aofsm/src/state_machine.h"
 #include "aofsm/src/std_types.h"
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-
-#include "aofsm/src/state_machine.h"
 
 // state machine
 //
@@ -44,15 +43,16 @@ class SimlpeClient3 {
   MOCK_METHOD(void, DoReset, (), ());
   MOCK_METHOD(void, DoNop, (), ());
 
-  DECL_STATE_MACHINE_WITH_MULT_ACTIONS(SimlpeClient3, state_machine_, 2);
+  DECL_STATE_MACHINE_WITH_MULT_ACTIONS_PER_TRANSITION(
+      SimlpeClient3, state_machine_, ACTIONS_PER_TRANSITION(2));
 };
 
-DEF_STATE_MACHINE(SimlpeClient3, state_machine_){
-    {// Transitions
-     // {Src-State  Event   Dst-State Actions}
-     {INITIAL_STATE, kStartEvt, MIDDLE_STATE, {&DoStart, &DoTick}},
-     {MIDDLE_STATE, kEndEvt, FINAL_STATE, {&DoTick, &DoEnd}},
-     {FINAL_STATE, kResetEvt, INITIAL_STATE, &DoReset}}};
+DEF_STATE_MACHINE(SimlpeClient3, state_machine_,
+                  // Transitions
+                  // {Src-State , Event , Dst-State , Actions}
+                  {INITIAL_STATE, kStartEvt, MIDDLE_STATE, {&DoStart, &DoTick}},
+                  {MIDDLE_STATE, kEndEvt, FINAL_STATE, {&DoTick, &DoEnd}},
+                  {FINAL_STATE, kResetEvt, INITIAL_STATE, &DoReset});
 
 TEST(aofsm_StateMachineMultipleActions,
      MastCallAllActionsOnTransitionWithMultipleActions) {

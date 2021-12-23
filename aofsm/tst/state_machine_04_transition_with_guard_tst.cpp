@@ -2,11 +2,11 @@
 //
 // Pro Zustand und Event: ein Guard, mit bool-Rückgabewert, und zwei Optionale
 // Übergänge (Ziel-Zustand und Actions)
+#include "../src/state_machine_instance.h"
 #include "aofsm/src/std_types.h"
 
 
 
-#include "aofsm/src/state_machine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -64,7 +64,7 @@ class SimlpeClient4 {
 
   bool is_a_{false};
 
-  using StateMachine_t = aofsm::StateMachine<SimlpeClient4>;
+  using StateMachine_t = aofsm::StateMachineInstance<SimlpeClient4>;
 
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 

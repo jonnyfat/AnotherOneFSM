@@ -4,11 +4,11 @@
 // für den Event spezifiziert wird
 //
 
+#include "../src/state_machine_instance.h"
 #include "aofsm/src/std_types.h"
 
 
 
-#include "aofsm/src/state_machine.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -31,7 +31,7 @@ class SimlpeClient6 {
 
   void DoError() {}
 
-  using StateMachine_t = aofsm::StateMachine<SimlpeClient6>;
+  using StateMachine_t = aofsm::StateMachineInstance<SimlpeClient6>;
 
   using StateMachineDescription_t = StateMachine_t::StateMachineDescription_t;
 

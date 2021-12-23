@@ -1,30 +1,28 @@
 // Copyright Yevgen
-#ifndef AOFSM_SRC_ARRAY_OF_ACTIONS_H_
-#define AOFSM_SRC_ARRAY_OF_ACTIONS_H_
+#ifndef AOFSM_SRC_INTERNAL_ARRAY_OF_ACTIONS_H_
+#define AOFSM_SRC_INTERNAL_ARRAY_OF_ACTIONS_H_
 
 #include "aofsm/src/std_types.h"
 
 namespace aofsm {
 namespace internal {
 
-
-
-// Es muss struct sein
+// Enthält eine oder Mehrere Actions für eine Transition
 template <size_t MAX_ACTIONS_PER_TRANSITION, typename Action_t>
-class ArrayOfActions {
+class StateMachineTransitionAction {
  public:
-  ArrayOfActions() : action_count{0} {}
+  StateMachineTransitionAction() : action_count{0} {}
 
   template <class... Actions>
-  ArrayOfActions(Action_t first_action, Actions... actions)
+  StateMachineTransitionAction(Action_t first_action, Actions... actions)
       : action_count{1 + sizeof...(actions)},
         action_array{first_action, actions...} {}
 
   // ist trivial kopierbar
-  ArrayOfActions(const ArrayOfActions&) = default;
-  ArrayOfActions(ArrayOfActions&&) = default;
-  ArrayOfActions& operator=(const ArrayOfActions&) = default;
-  ArrayOfActions& operator=(ArrayOfActions&&) = default;
+  StateMachineTransitionAction(const StateMachineTransitionAction&) = default;
+  StateMachineTransitionAction(StateMachineTransitionAction&&) = default;
+  StateMachineTransitionAction& operator=(const StateMachineTransitionAction&) = default;
+  StateMachineTransitionAction& operator=(StateMachineTransitionAction&&) = default;
 
   template <typename Client_t, typename... Params>
   void CallFor(Client_t* client, Params... params) const {
@@ -55,4 +53,4 @@ class ArrayOfActions {
 }  // namespace internal
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_ARRAY_OF_ACTIONS_H_
+#endif  // AOFSM_SRC_INTERNAL_ARRAY_OF_ACTIONS_H_

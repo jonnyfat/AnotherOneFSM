@@ -1,60 +1,57 @@
 // copyright Yevgen
 
-#ifndef AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_
-#define AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_
+#ifndef AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_TABLE_H_
+#define AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_TABLE_H_
 
 #include "aofsm/src/std_types.h"
 
-#include "aofsm/src/internal/transition_data.h"
-
-#include "aofsm/src/internal/state_info.h"
-
-#include "aofsm/src/internal/transition.h"
+#include "aofsm/src/internal/state_machine_transition.h"
+#include "aofsm/src/internal/state_machine_transition_data.h"
 
 namespace aofsm {
 
-// Die Klasse StateMachineDescription erlaubt es einem Client-Class aus einer
-// Menge von erlaubten Statemachine-Transitionen {SrcState,  Event, DstState,
-// Action} einen Map zu erzeugen:
+// Die Klasse StateMachineTransitionTable erlaubt es aus einer Menge von
+// erlaubten Statemachine-Transitionen {SrcState,  Event, DstState, Action}
+// einen Map zu erzeugen:
 //
 //    {SrcState,Event} => {DstState,Action}
 //
-// Die Events und Zustände müssen im Client-Class als Enums definiert sein.
+// Die Zustände und Events  müssen als Enums State_t und Event_t definiert sein.
 //
-// Die Statemachine-Transitionen können als TransitionArray als
+// Die Statemachine-Transitionen müssen als Transition-Array  als
 // Kosntruktor-Parameter übergeben werden.
 //
 // Beispiel:
 //
 //  Für folgende Statemachine
 //  - zwei States: StateA, StateB
-//  - ein Event: EventAction.
+//  - ein Event: EventX
 //  - zwei Actions: DoA DoB
 //  - zwei Transitionen:
-//    -  StateA EventAction/DoA -> StateA
-//    -  StateB EventAction/DoB -> StateB
+//    -  StateA -> EventX/DoA -> StateB
+//    -  StateB -> EventX/DoB -> StateA
 //
-//  muss der Clien-Class
+//  muss die Client-Classe
 //
 //  - zwei nested Enums haben: :
 //      -  enum State { kStateA, kStateB, kStateCount};
-//      -  enum Event { kEventAction , kEventCount };
+//      -  enum Event { kEventX , kEventCount };
 //
-//  - statisch StateMachineDescription instanziiern mit folgendem
-//    TransitionArray als Konstruktor-Parameter :
+//  - Transition-Array :
 //
-//     {{kStateA, kEventAction, kStateA, &Client::DoA},
-//      {kStateB, kEventAction, kStateB, &Client::DoB}}
+//     {kStateA, kEventX, kStateB, DoA},
+//     {kStateB, kEventX, kStateA, DoB}
 //
 // Allgemeine Beschreibung der Schnittstellle:
 //
-//  Die StateMachineDescription ist ein Template mit folgenden Parametern:
+//  Die StateMachineTransitionTable ist ein Template mit Parametern Context:
+//  Der Context muss folgendes haben:
 //  - State_t : Datentyp für State-Id, muss enum sein und folgende Konstante
 //              kStateCount haben
 //              kStateCount - Anzahl der Zustände
 //  - Event_t : Datentyp für Event, muss enum sein und folgende Konstante
-//              kEvent haben
-//              kEvent - Anzahl der Events
+//              kEventCount haben
+//              kEventCount - Anzahl der Events
 //  - Action_t, Guard_t : Datentypen welche für jede Transition {SrcState,Event}
 //                        gespeichert werden.  Müssen kopierbar sein.
 //
@@ -75,7 +72,7 @@ namespace aofsm {
 //
 //   - Default-Action für Event
 //
-//     * für ein Event in einem beleibiegen Zustand parametriert eine oder
+//     * für ein Event in einem beliebigen Zustand parametriert eine oder
 //       mehrere Actionen
 //
 //     * kein Zustandswechsel
@@ -93,7 +90,7 @@ namespace aofsm {
 //
 //   - Default-Transition für Event
 //
-//     * für ein Event in einem beleibiegen Zustand parametriert eine oder
+//     * für ein Event in einem beliebigen Zustand parametriert eine oder
 //       mehrere Actionen und Übergang in den Zielzustand
 //
 //     * überschreibt Default-Action für das Event, falls fälschlicherweise
@@ -137,7 +134,7 @@ namespace aofsm {
 //
 
 template <typename Context>
-class StateMachineDescription {
+class StateMachineTransitionTable {
  public:
   using State_t = typename Context::State_t;
   using Event_t = typename Context::Event_t;
@@ -146,10 +143,10 @@ class StateMachineDescription {
 
   // Konfigurationselement für Transitionen
   // Wird benutzt um die Transitionen von State-Machine zu parametrieren.
-  using Transition_t = Transition<Context>;
+  using Transition_t = StateMachineTransition<Context>;
 
   // Transitionsinformation für {Source-State,Event}-Paar.
-  using TransitionForStateAndEvent_t = TransitionData<Context>;
+  using TransitionForStateAndEvent_t = StateMachineTransitionData<Context>;
 
   // Um Konfiguration von State-Machine zu vereinfachen werden alle
   // Transitionen als eine Datenstruktur von Typ Transition definiert.
@@ -159,23 +156,13 @@ class StateMachineDescription {
   template <size_t N>
   using TransitionArray = Transition_t[N];
 
-  using StateInfo_t = StateInfo<State_t, Action_t>;
-
-  template <size_t N>
-  using StateInfoArray = StateInfo_t[N];
-
   // Konstruktor: Initialisierung der TransitionMap-Instanz nur mit der
   // Transition-Konfiguration
   template <size_t TRANSITION_COUNT>
-  StateMachineDescription(const TransitionArray<TRANSITION_COUNT>& transitions);
+  StateMachineTransitionTable(
+      const TransitionArray<TRANSITION_COUNT>& transitions);
 
-  // Konstruktor: Initialisierung der State-Machine mit der
-  // Transition-Konfiguration und State-Konfiguration
-  template <size_t TRANSITION_COUNT, size_t STATE_INFO_COUNT>
-  StateMachineDescription(const TransitionArray<TRANSITION_COUNT>& transitions,
-                          const StateInfoArray<STATE_INFO_COUNT>& state_infos);
-
-  virtual ~StateMachineDescription() = default;
+  virtual ~StateMachineTransitionTable() = default;
 
   const TransitionForStateAndEvent_t& GetTransition(State_t src_state,
                                                     Event_t event) const;
@@ -191,8 +178,6 @@ class StateMachineDescription {
   void SetupTransition(const Transition_t& transition);
 
   void SetupConditionalTransition(const Transition_t& transition);
-
-  void SetupStates(const StateInfo_t* state_infos, size_t state_info_count);
 
   void SetupSubStates(State_t state, const State_t* substates,
                       size_t substates_count);
@@ -212,22 +197,13 @@ class StateMachineDescription {
 
 template <typename Context>
 template <size_t TRANSITION_COUNT>
-StateMachineDescription<Context>::StateMachineDescription(
+StateMachineTransitionTable<Context>::StateMachineTransitionTable(
     const TransitionArray<TRANSITION_COUNT>& transitions) {
   SetupTransitions(transitions, TRANSITION_COUNT);
 }
 
 template <typename Context>
-template <size_t TRANSITION_COUNT, size_t STATE_INFO_COUNT>
-StateMachineDescription<Context>::StateMachineDescription(
-    const TransitionArray<TRANSITION_COUNT>& transitions,
-    const StateInfoArray<STATE_INFO_COUNT>& state_infos) {
-  SetupTransitions(transitions, TRANSITION_COUNT);
-  SetupStates(state_infos, STATE_INFO_COUNT);
-}
-
-template <typename Context>
-void StateMachineDescription<Context>::SetupTransitions(
+void StateMachineTransitionTable<Context>::SetupTransitions(
     const Transition_t* transitions, size_t transition_count) {
   auto end = transitions + transition_count;
   for (auto transition = transitions; transition != end; ++transition) {
@@ -249,20 +225,7 @@ void StateMachineDescription<Context>::SetupTransitions(
 }
 
 template <typename Context>
-void StateMachineDescription<Context>::SetupStates(
-    const StateInfo_t* state_infos, size_t state_info_count) {
-  auto end = state_infos + state_info_count;
-  for (auto state_info = state_infos; state_info != end; ++state_info) {
-    auto& state = state_transitions_[state_info->state];
-    state.on_entry_actions = state_info->on_entry_actions;
-    state.on_exit_actions = state_info->on_exit_actions;
-    SetupSubStates(state_info->state, state_info->sub_states,
-                   state_info->sub_states_count);
-  }
-}
-
-template <typename Context>
-void StateMachineDescription<Context>::SetupDefaultAction(
+void StateMachineTransitionTable<Context>::SetupDefaultAction(
     const Transition_t& transition) {
   auto event = transition.event;
 
@@ -271,19 +234,19 @@ void StateMachineDescription<Context>::SetupDefaultAction(
     auto& event_transition = state.event_transitions[event];
     event_transition.guard_action = nullptr;
     event_transition.trans1_dst_state = static_cast<State_t>(state_idx);
-    event_transition.trans1_actions = transition.transition_data.trans1_actions;
+    event_transition.trans1_action = transition.transition_data.trans1_action;
     event_transition.trans2_dst_state = Context::kInvalidStateId;
-    event_transition.trans2_actions.SetEmpty();
+    event_transition.trans2_action.SetEmpty();
     ++state_idx;
   }
 }
 
 template <typename Context>
-void StateMachineDescription<Context>::SetupDefaultTransition(
+void StateMachineTransitionTable<Context>::SetupDefaultTransition(
     const Transition_t& transition) {}
 
 template <typename Context>
-void StateMachineDescription<Context>::SetupTransition(
+void StateMachineTransitionTable<Context>::SetupTransition(
     const Transition_t& transition) {
   TransitionForStateAndEvent_t& event_transition =
       state_transitions_[transition.src_state]
@@ -293,21 +256,21 @@ void StateMachineDescription<Context>::SetupTransition(
 }
 
 template <typename Context>
-void StateMachineDescription<Context>::SetupConditionalTransition(
+void StateMachineTransitionTable<Context>::SetupConditionalTransition(
     const Transition_t& transition) {}
 
 template <typename Context>
-void StateMachineDescription<Context>::SetupSubStates(State_t state,
-                                                      const State_t* substates,
-                                                      size_t substates_count) {}
+void StateMachineTransitionTable<Context>::SetupSubStates(
+    State_t state, const State_t* substates, size_t substates_count) {}
 
 template <typename Context>
-const typename StateMachineDescription<Context>::TransitionForStateAndEvent_t&
-StateMachineDescription<Context>::GetTransition(State_t src_state,
-                                                Event_t event) const {
+const typename StateMachineTransitionTable<
+    Context>::TransitionForStateAndEvent_t&
+StateMachineTransitionTable<Context>::GetTransition(State_t src_state,
+                                                    Event_t event) const {
   return state_transitions_[src_state].event_transitions[event];
 }
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_STATE_MACHINE_V1_STATE_MACHINE_DESCRIPTION_H_
+#endif  // AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_TABLE_H_
