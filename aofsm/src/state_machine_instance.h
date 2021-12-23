@@ -9,6 +9,7 @@
 #include "aofsm/src/internal/state_machine_transition.h"
 #include "aofsm/src/internal/state_machine_transition_action.h"
 #include "aofsm/src/internal/state_machine_transition_table.h"
+#include "aofsm/src/internal/state_machine_transition_data.h"
 
 namespace aofsm {
 
@@ -87,13 +88,18 @@ namespace aofsm {
 template <typename Client, size_t MAX_ACTIONS_PER_TRANSITION = 1,
           typename... ActionParameterTypes>
 class StateMachineInstance {
- public:
   using State = typename Client::State;
   using Event = typename Client::Event;
 
   // Pointer auf Member-Methode des Clients, welche bei einer Transition als
   // Action aufgerufen wird.
-  using ActionStep_t = void (Client::*)(ActionParameterTypes...);
+  using SingleAction_t = void (Client::*)(ActionParameterTypes...);
+
+  // Fasst eines oder mehrere Member-Method-Zeiger des Clients,
+  // welche bei einer Transition aufgerufen werden.
+  using TransitionActions_t =
+      internal::StateMachineTransitionAction<MAX_ACTIONS_PER_TRANSITION,
+                                             SingleAction_t>;
 
   // Pointer auf Member-Methode des Clients, welche bei einer Guarded-Transition
   // als Guard dient.
@@ -102,27 +108,22 @@ class StateMachineInstance {
   // Bei true wird 1. Transition ausgeführt, bei false die 2.
   using Guard_t = bool (Client::*)(ActionParameterTypes...) const;
 
-  // Fasst Zeiger auf mehrere Member-Methoden des Clients, welche bei einer
-  // Transition aufgerufen werden.
-  using ArrayOfActions_t =
-      internal::StateMachineTransitionAction<MAX_ACTIONS_PER_TRANSITION,
-                                             ActionStep_t>;
-
   using Context_t =
-      StateMachineContext<Client, State, Event, ArrayOfActions_t, Guard_t,
+      StateMachineContext<Client, State, Event, TransitionActions_t, Guard_t,
                           State::kStateCount, Event::kEventCount>;
 
-  using StateMachineTransitionTable_t = StateMachineTransitionTable<Context_t>;
+  using TransitionData_t = StateMachineTransitionData<Context_t>;
 
-  using EventTransition_t =
-      typename StateMachineTransitionTable_t::TransitionForStateAndEvent_t;
+ public:
+  // Der Client muss eine StateMachineTransitionTable_t-Instanz statisch anlegen
+  // und Parametrieren.
+  using TransitionTable_t = StateMachineTransitionTable<Context_t>;
 
-  // Konstruktor: Initialisierung der State-Machine nur mit der
-  // Transition-Konfiguration
+  // Konstruktor:
+  // - client - Instant der Client-Klasse
+  // - transition_table - Transisionsstabelle
   StateMachineInstance(Client* client,
-                       const StateMachineTransitionTable_t& transition_table_);
-
-  virtual ~StateMachineInstance() = default;
+                       const TransitionTable_t& transition_table);
 
   void Trigger(Event event, ActionParameterTypes... params);
 
@@ -130,12 +131,14 @@ class StateMachineInstance {
 
   State GetCurrentState() const { return current_state_; }
 
+  virtual ~StateMachineInstance() = default;
+
  private:
   Client* client_{nullptr};
 
-  const StateMachineTransitionTable_t& transition_table__;
-
   State current_state_{State::INITIAL_STATE};
+
+  const TransitionTable_t& transition_table_;
 };
 
 template <typename Client, size_t MAX_ACTIONS_PER_TRANSITION,
@@ -143,8 +146,8 @@ template <typename Client, size_t MAX_ACTIONS_PER_TRANSITION,
 StateMachineInstance<Client, MAX_ACTIONS_PER_TRANSITION,
                      ActionParameterTypes...>::
     StateMachineInstance(Client* client,
-                         const StateMachineTransitionTable_t& transition_table_)
-    : client_{client}, transition_table__{transition_table_} {}
+                         const TransitionTable_t& transition_table)
+    : client_{client}, transition_table_{transition_table} {}
 
 template <typename Client, size_t MAX_ACTIONS_PER_TRANSITION,
           typename... ActionParameterTypes>
@@ -154,12 +157,12 @@ void StateMachineInstance<
                                       ActionParameterTypes... params) {
   if (current_state_ < State::kStateCount && event < Event::kEventCount) {
     // Transaction in aktuellem Zustand für den aktuellen Event.
-    const EventTransition_t& current_transition =
-        transition_table__.GetTransition(current_state_, event);
+    const TransitionData_t& current_transition =
+        transition_table_.GetTransition(current_state_, event);
 
     // Die Actions, welche beim Zustandsübergang ausgeführt werden müssen sind
     // von Guard abhängig
-    const ArrayOfActions_t* transition_action = nullptr;
+    const TransitionActions_t* transition_action = nullptr;
 
     Guard_t guard_action = current_transition.guard_action;
 

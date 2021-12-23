@@ -1,7 +1,7 @@
 // Copyright Yevgen
 
-#ifndef AOFSM_SRC_TRANSITION_H_
-#define AOFSM_SRC_TRANSITION_H_
+#ifndef AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_H_
+#define AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_H_
 
 #include "aofsm/src/internal/state_machine_transition_data.h"
 
@@ -103,4 +103,4 @@ struct StateMachineTransition {
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_TRANSITION_H_
+#endif  // AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_H_

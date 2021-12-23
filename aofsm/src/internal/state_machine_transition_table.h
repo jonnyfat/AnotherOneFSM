@@ -10,9 +10,9 @@
 
 namespace aofsm {
 
-// Die Klasse StateMachineTransitionTable erlaubt es aus einer Menge von
+// StateMachineTransitionTable erzeugen es aus einer Menge von
 // erlaubten Statemachine-Transitionen {SrcState,  Event, DstState, Action}
-// einen Map zu erzeugen:
+// einen Map:
 //
 //    {SrcState,Event} => {DstState,Action}
 //
@@ -135,7 +135,6 @@ namespace aofsm {
 
 template <typename Context>
 class StateMachineTransitionTable {
- public:
   using State_t = typename Context::State_t;
   using Event_t = typename Context::Event_t;
   using Action_t = typename Context::Action_t;
@@ -156,16 +155,16 @@ class StateMachineTransitionTable {
   template <size_t N>
   using TransitionArray = Transition_t[N];
 
+ public:
   // Konstruktor: Initialisierung der TransitionMap-Instanz nur mit der
   // Transition-Konfiguration
   template <size_t TRANSITION_COUNT>
   StateMachineTransitionTable(
       const TransitionArray<TRANSITION_COUNT>& transitions);
 
-  virtual ~StateMachineTransitionTable() = default;
-
   const TransitionForStateAndEvent_t& GetTransition(State_t src_state,
                                                     Event_t event) const;
+  virtual ~StateMachineTransitionTable() = default;
 
  private:
   void SetupTransitions(const Transition_t* transitions,
@@ -179,16 +178,7 @@ class StateMachineTransitionTable {
 
   void SetupConditionalTransition(const Transition_t& transition);
 
-  void SetupSubStates(State_t state, const State_t* substates,
-                      size_t substates_count);
-
   struct StateTransitions {
-    State_t parent_state{Context::kInvalidStateId};
-
-    Action_t on_entry_action;
-
-    Action_t on_exit_action;
-
     TransitionForStateAndEvent_t event_transitions[Event_t::kEventCount];
   };
 
@@ -258,10 +248,6 @@ void StateMachineTransitionTable<Context>::SetupTransition(
 template <typename Context>
 void StateMachineTransitionTable<Context>::SetupConditionalTransition(
     const Transition_t& transition) {}
-
-template <typename Context>
-void StateMachineTransitionTable<Context>::SetupSubStates(
-    State_t state, const State_t* substates, size_t substates_count) {}
 
 template <typename Context>
 const typename StateMachineTransitionTable<

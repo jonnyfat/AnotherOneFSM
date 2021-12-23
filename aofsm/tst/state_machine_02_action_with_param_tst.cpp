@@ -46,9 +46,9 @@ class SimlpeClient2 {
   //  void DoStartB(Data*) {}
   MOCK_METHOD(void, DoStartB, (Data*), ());
 
-  DECL_STATE_MACHINE_WITH_ACTIONS_WITH_PARAMETERS(SimlpeClient2, state_machine_,
-                                                  ACTIONS_PER_TRANSITION(1),
-                                                  ACTION_PARAMETERS(Data*));
+  DECL_STATE_MACHINE_ACTIONS_WITH_PARAMETERS(SimlpeClient2, state_machine_,
+                                             MAX_ACTIONS_PER_TRANSITION(1),
+                                             ACTION_PARAMETERS(Data*));
 };
 
 DEF_STATE_MACHINE(SimlpeClient2, state_machine_,

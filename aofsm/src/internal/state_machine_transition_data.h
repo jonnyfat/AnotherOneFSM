@@ -3,12 +3,13 @@
 //
 //----------------------------------------------------------------------------
 
-#ifndef AOFSM_SRC_INTERNAL_TRANSITION_DATA_H_
-#define AOFSM_SRC_INTERNAL_TRANSITION_DATA_H_
+#ifndef AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_DATA_H_
+#define AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_DATA_H_
 
 namespace aofsm {
 
-// Kapselt die Teilinformation einer Transition für einen State und Event.
+/// StateMachineTransitionData kapselt die Teilinformation einer Transition für
+/// einen State und Event.
 template <typename Context>
 struct StateMachineTransitionData {
   using State_t = typename Context::State_t;
@@ -30,4 +31,4 @@ struct StateMachineTransitionData {
 
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_INTERNAL_TRANSITION_DATA_H_
+#endif  // AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_DATA_H_

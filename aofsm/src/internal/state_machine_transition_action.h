@@ -1,13 +1,14 @@
 // Copyright Yevgen
-#ifndef AOFSM_SRC_INTERNAL_ARRAY_OF_ACTIONS_H_
-#define AOFSM_SRC_INTERNAL_ARRAY_OF_ACTIONS_H_
+#ifndef AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_ACTION_H_
+#define AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_ACTION_H_
 
 #include "aofsm/src/std_types.h"
 
 namespace aofsm {
 namespace internal {
 
-// Enthält eine oder Mehrere Actions für eine Transition
+// StateMachineTransitionAction enthält eine oder Mehrere Actions einer
+// Transition
 template <size_t MAX_ACTIONS_PER_TRANSITION, typename Action_t>
 class StateMachineTransitionAction {
  public:
@@ -21,8 +22,10 @@ class StateMachineTransitionAction {
   // ist trivial kopierbar
   StateMachineTransitionAction(const StateMachineTransitionAction&) = default;
   StateMachineTransitionAction(StateMachineTransitionAction&&) = default;
-  StateMachineTransitionAction& operator=(const StateMachineTransitionAction&) = default;
-  StateMachineTransitionAction& operator=(StateMachineTransitionAction&&) = default;
+  StateMachineTransitionAction& operator=(const StateMachineTransitionAction&) =
+      default;
+  StateMachineTransitionAction& operator=(StateMachineTransitionAction&&) =
+      default;
 
   template <typename Client_t, typename... Params>
   void CallFor(Client_t* client, Params... params) const {
@@ -53,4 +56,4 @@ class StateMachineTransitionAction {
 }  // namespace internal
 }  // namespace aofsm
 
-#endif  // AOFSM_SRC_INTERNAL_ARRAY_OF_ACTIONS_H_
+#endif  // AOFSM_SRC_INTERNAL_STATE_MACHINE_TRANSITION_ACTION_H_

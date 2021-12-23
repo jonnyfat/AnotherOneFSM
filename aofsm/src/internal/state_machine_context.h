@@ -4,8 +4,8 @@
 
 namespace aofsm {
 
-// Kapselt alle Parameter einer State-Machine, um andere Klassen der
-// Implementierung auf einfache Weise zu Parametrieren.
+// StateMachineContext Kapselt alle Parameter einer State-Machine, um andere
+// Klassen der Implementierung auf einfache Weise zu Parametrieren.
 template <typename Client, typename State, typename Event, typename Action,
           typename Guard, size_t STATE_COUNT, size_t EVENT_COUNT>
 struct StateMachineContext {

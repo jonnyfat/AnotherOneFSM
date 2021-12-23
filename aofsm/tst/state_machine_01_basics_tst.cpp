@@ -40,7 +40,8 @@ class SimlpeClient1 {
   MOCK_METHOD(void, DoStartA, (), ());
   MOCK_METHOD(void, DoStartB, (), ());
 
-  DECL_STATE_MACHINE(SimlpeClient1, state_machine_);
+  DECL_STATE_MACHINE(SimlpeClient1, state_machine_,
+                     MAX_ACTIONS_PER_TRANSITION(1));
 };
 
 DEF_STATE_MACHINE(SimlpeClient1, state_machine_,
